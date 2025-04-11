@@ -1,7 +1,16 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Download, Heart, BookOpen, Presentation, Users } from "lucide-react";
+import { 
+  Download, 
+  Heart, 
+  BookOpen, 
+  Presentation, 
+  Users,
+  Headphones as HeadphonesIcon,
+  FileText,
+  Vibrate as VibrateIcon
+} from "lucide-react";
 
 const About = () => {
   return (
@@ -13,7 +22,7 @@ const About = () => {
           especially those with visual impairments.
         </p>
         
-        <div className="glass-morph rounded-lg p-8 mb-12">
+        <div className="glass-morph rounded-lg p-8 mb-12 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300">
           <h2 className="text-2xl font-semibold mb-4">Our Mission</h2>
           <p className="mb-6">
             We believe that education should be accessible to everyone, regardless of physical ability. 
@@ -45,7 +54,10 @@ const About = () => {
               description: "Developed alongside educators to ensure alignment with curriculum standards."
             }
           ].map((value, index) => (
-            <div key={index} className="glass-morph p-6 rounded-lg text-center card-hover">
+            <div 
+              key={index} 
+              className="glass-morph p-6 rounded-lg text-center card-hover shadow-[0_4px_14px_0_rgb(0,0,0,0.2)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.3)] transition-all duration-300"
+            >
               <div className="flex justify-center mb-4">
                 <div className="p-3 rounded-full glass-morph">
                   {value.icon}
@@ -60,10 +72,10 @@ const About = () => {
       
       <section className="max-w-4xl mx-auto mb-16 animate-fade-in">
         <h2 className="text-3xl font-bold text-gradient-accent mb-6">How It Works</h2>
-        <div className="glass-morph rounded-lg p-8">
+        <div className="glass-morph rounded-lg p-8 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300">
           <div className="space-y-8">
             <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-shrink-0 p-3 rounded-full glass-morph">
+              <div className="flex-shrink-0 p-3 rounded-full glass-morph shadow-lg">
                 <Camera className="h-8 w-8 text-stem-blue" />
               </div>
               <div>
@@ -76,7 +88,7 @@ const About = () => {
             </div>
             
             <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-shrink-0 p-3 rounded-full glass-morph">
+              <div className="flex-shrink-0 p-3 rounded-full glass-morph shadow-lg">
                 <FileText className="h-8 w-8 text-stem-purple" />
               </div>
               <div>
@@ -89,8 +101,8 @@ const About = () => {
             </div>
             
             <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-shrink-0 p-3 rounded-full glass-morph">
-                <Headphones className="h-8 w-8 text-stem-light" />
+              <div className="flex-shrink-0 p-3 rounded-full glass-morph shadow-lg">
+                <HeadphonesIcon className="h-8 w-8 text-stem-light" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold mb-2">Hear</h3>
@@ -102,8 +114,8 @@ const About = () => {
             </div>
             
             <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-shrink-0 p-3 rounded-full glass-morph">
-                <Vibrate className="h-8 w-8 text-stem-blue" />
+              <div className="flex-shrink-0 p-3 rounded-full glass-morph shadow-lg">
+                <VibrateIcon className="h-8 w-8 text-stem-blue" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold mb-2">Feel</h3>
@@ -119,7 +131,7 @@ const About = () => {
       
       <section className="max-w-4xl mx-auto mb-16 animate-fade-in">
         <h2 className="text-3xl font-bold text-gradient-accent mb-6">Our Team</h2>
-        <div className="glass-morph rounded-lg p-8">
+        <div className="glass-morph rounded-lg p-8 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300">
           <div className="flex items-center justify-center mb-8">
             <Users className="h-16 w-16 text-stem-purple" />
           </div>
@@ -136,7 +148,11 @@ const About = () => {
         <p className="text-xl text-muted-foreground mb-8">
           Experience the future of accessible STEM education.
         </p>
-        <Button size="lg" className="glass-morph" asChild>
+        <Button 
+          size="lg" 
+          className="glass-morph bg-stem-blue/20 hover:bg-stem-blue/40 text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.4)] transition-all duration-300"
+          asChild
+        >
           <Link to="/download">
             <Download className="mr-2 h-5 w-5" />
             Download the App
@@ -165,26 +181,5 @@ const Camera = ({ className }: { className?: string }) => (
   >
     <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
     <circle cx="12" cy="13" r="3" />
-  </svg>
-);
-
-const FileText = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-    <polyline points="14 2 14 8 20 8" />
-    <line x1="16" y1="13" x2="8" y2="13" />
-    <line x1="16" y1="17" x2="8" y2="17" />
-    <line x1="10" y1="9" x2="8" y2="9" />
   </svg>
 );

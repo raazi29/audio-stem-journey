@@ -10,7 +10,7 @@ export function ThemeToggle({ className }: { className?: string }) {
     <Button
       variant="ghost"
       size="icon"
-      className={`relative overflow-hidden glass-morph hover:bg-white/10 ${className}`}
+      className={`relative overflow-hidden glass-morph hover:bg-white/15 shadow-[0_2px_10px_0_rgba(0,0,0,0.1)] hover:shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] transition-all duration-300 ${className}`}
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
       aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
     >
