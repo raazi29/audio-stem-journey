@@ -78,16 +78,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Authentication error:", error);
+        throw error;
+      }
       
       return { error: null };
     } catch (error) {
       console.error("Error signing in:", error);
+      
+      // More specific error messages
+      const errorMessage = (error as any)?.message || "An unknown error occurred";
+      let userFriendlyMessage = errorMessage;
+      
+      if (errorMessage.includes("Invalid login credentials")) {
+        userFriendlyMessage = "Invalid email or password. Please try again.";
+      } else if (errorMessage.includes("Email not confirmed")) {
+        userFriendlyMessage = "Please confirm your email before signing in.";
+      }
+      
       toast({
         title: "Sign in failed",
-        description: (error as Error).message,
+        description: userFriendlyMessage,
         variant: "destructive",
       });
+      
       return { error: error as Error };
     }
   };
@@ -98,6 +113,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
       });
       
       if (error) throw error;
@@ -111,11 +129,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return { error: null };
     } catch (error) {
       console.error("Error signing up:", error);
+      
+      // More specific error messages
+      const errorMessage = (error as any)?.message || "An unknown error occurred";
+      let userFriendlyMessage = errorMessage;
+      
+      if (errorMessage.includes("already registered")) {
+        userFriendlyMessage = "This email is already registered. Try signing in instead.";
+      }
+      
       toast({
         title: "Sign up failed",
-        description: (error as Error).message,
+        description: userFriendlyMessage,
         variant: "destructive",
       });
+      
       return { error: error as Error };
     }
   };
@@ -144,7 +172,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Google auth error:", error);
+        
+        // Check if the provider is not enabled
+        if (error.message.includes("provider is not enabled") || 
+            error.message.includes("Unsupported provider")) {
+          toast({
+            title: "Google sign in failed",
+            description: "Google authentication is not enabled for this application. Please contact the administrator.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+      }
     } catch (error) {
       console.error("Error signing in with Google:", error);
       toast({
@@ -165,7 +207,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("GitHub auth error:", error);
+        
+        // Check if the provider is not enabled
+        if (error.message.includes("provider is not enabled") || 
+            error.message.includes("Unsupported provider")) {
+          toast({
+            title: "GitHub sign in failed",
+            description: "GitHub authentication is not enabled for this application. Please contact the administrator.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+      }
     } catch (error) {
       console.error("Error signing in with GitHub:", error);
       toast({

@@ -1,18 +1,27 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Menu, X, Download, LogIn, Home, Info, LifeBuoy } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Menu, X, Download, LogIn, LogOut, Home, Info, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSupabaseAuth } from "@/lib/auth";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { user, signOut } = useSupabaseAuth();
   
   const toggleMenu = () => setIsOpen(!isOpen);
   
   const closeMenu = () => setIsOpen(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/login");
+    closeMenu();
+  };
 
   const menuItems = [
     { label: "Home", href: "/", icon: <Home className="mr-2 h-4 w-4" /> },
@@ -41,7 +50,7 @@ export default function Navbar() {
               <Link
                 key={item.href}
                 to={item.href}
-                className="flex items-center text-sm font-medium text-foreground/70 transition-colors hover:text-foreground"
+                className="flex items-center text-sm font-medium transition-colors hover:text-foreground dark:text-white light:text-gray-800"
                 aria-label={`Go to ${item.label} page`}
               >
                 {item.icon}
@@ -52,18 +61,26 @@ export default function Navbar() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="outline" className="glass-morph ml-2 hidden md:flex" asChild>
-              <Link to="/login">
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In
-              </Link>
-            </Button>
+            
+            {user ? (
+              <Button variant="outline" className="glass-morph ml-2 hidden md:flex dark:text-white light:text-gray-800" onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </Button>
+            ) : (
+              <Button variant="outline" className="glass-morph ml-2 hidden md:flex dark:text-white light:text-gray-800" asChild>
+                <Link to="/login">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign In
+                </Link>
+              </Button>
+            )}
 
             {/* Mobile menu button */}
             <Button 
               variant="ghost" 
               size="icon" 
-              className="md:hidden glass-morph"
+              className="md:hidden glass-morph dark:text-white light:text-gray-800"
               onClick={toggleMenu}
               aria-label={isOpen ? "Close menu" : "Open menu"}
             >
@@ -85,7 +102,7 @@ export default function Navbar() {
               <Link
                 key={item.href}
                 to={item.href}
-                className="flex w-full items-center py-2 text-base font-medium"
+                className="flex w-full items-center py-2 text-base font-medium dark:text-white light:text-gray-800"
                 onClick={closeMenu}
                 aria-label={`Go to ${item.label} page`}
               >
@@ -93,12 +110,20 @@ export default function Navbar() {
                 <span>{item.label}</span>
               </Link>
             ))}
-            <Button variant="outline" className="glass-morph w-full mt-2" asChild>
-              <Link to="/login" onClick={closeMenu}>
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In
-              </Link>
-            </Button>
+            
+            {user ? (
+              <Button variant="outline" className="glass-morph w-full mt-2 dark:text-white light:text-gray-800" onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </Button>
+            ) : (
+              <Button variant="outline" className="glass-morph w-full mt-2 dark:text-white light:text-gray-800" asChild>
+                <Link to="/login" onClick={closeMenu}>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign In
+                </Link>
+              </Button>
+            )}
           </nav>
         </div>
       )}

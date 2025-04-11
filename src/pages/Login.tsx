@@ -94,7 +94,7 @@ const Login = () => {
   return (
     <div className="flex items-center justify-center min-h-[80vh] px-4 py-12">
       <div className="w-full max-w-md animate-fade-in">
-        <Card className="glass-morph">
+        <Card className="glass-morph shadow-xl">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center text-gradient">Sign In</CardTitle>
             <CardDescription className="text-center">
@@ -149,7 +149,7 @@ const Login = () => {
               
               <Button
                 type="submit"
-                className="w-full glass-morph"
+                className="w-full glass-morph bg-stem-blue hover:bg-stem-blue/90 text-white"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Signing in..." : "Sign In"}
@@ -171,7 +171,7 @@ const Login = () => {
             <div className="grid grid-cols-2 gap-4">
               <Button
                 variant="outline"
-                className="glass-morph"
+                className="glass-morph border-white/20 hover:bg-white/10 dark:text-white light:text-foreground"
                 onClick={() => handleOAuthSignIn('github')}
               >
                 <Github className="mr-2 h-4 w-4" />
@@ -179,7 +179,7 @@ const Login = () => {
               </Button>
               <Button
                 variant="outline"
-                className="glass-morph"
+                className="glass-morph border-white/20 hover:bg-white/10 dark:text-white light:text-foreground"
                 onClick={() => handleOAuthSignIn('google')}
               >
                 <Mail className="mr-2 h-4 w-4" />
