@@ -9,13 +9,105 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      app_versions: {
+        Row: {
+          description: string | null
+          file_path: string
+          file_size: string
+          id: string
+          is_latest: boolean | null
+          release_date: string | null
+          version: string
+        }
+        Insert: {
+          description?: string | null
+          file_path: string
+          file_size: string
+          id?: string
+          is_latest?: boolean | null
+          release_date?: string | null
+          version: string
+        }
+        Update: {
+          description?: string | null
+          file_path?: string
+          file_size?: string
+          id?: string
+          is_latest?: boolean | null
+          release_date?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
+      downloads: {
+        Row: {
+          app_version_id: string | null
+          download_date: string | null
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          app_version_id?: string | null
+          download_date?: string | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          app_version_id?: string | null
+          download_date?: string | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "downloads_app_version_id_fkey"
+            columns: ["app_version_id"]
+            isOneToOne: false
+            referencedRelation: "app_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          id: string
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          id: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          id?: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_download_count: {
+        Args: { version_id?: string }
+        Returns: number
+      }
+      set_latest_version: {
+        Args: { version_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

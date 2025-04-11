@@ -5,37 +5,6 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-    --radius: 0.75rem;
-  }
-
-  .light {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
 
@@ -63,12 +32,53 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
+    --radius: 0.75rem;
+
+    /* STEM specific colors for light mode */
+    --stem-blue: 210 100% 50%;
+    --stem-purple: 270 100% 60%;
+    --stem-light: 180 100% 45%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+
+    /* STEM specific colors for dark mode */
+    --stem-blue: 210 100% 65%;
+    --stem-purple: 270 100% 75%;
+    --stem-light: 180 100% 60%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border selection:bg-stem-blue/20 selection:text-white;
+    @apply border-border selection:bg-stem-blue/20 selection:text-foreground;
   }
   
   html {
@@ -111,15 +121,77 @@
   }
   
   .text-gradient {
-    @apply bg-gradient-to-br from-white via-white/90 to-white/70 bg-clip-text text-transparent;
+    @apply bg-gradient-to-br from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent;
   }
   
   .text-gradient-accent {
-    @apply bg-gradient-to-br from-stem-blue via-stem-purple to-stem-light bg-clip-text text-transparent;
+    @apply bg-gradient-to-br from-[hsl(var(--stem-blue))] via-[hsl(var(--stem-purple))] to-[hsl(var(--stem-light))] bg-clip-text text-transparent;
   }
 
   /* For the 3D hover effect on cards */
   .card-hover {
     @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
   }
+
+  /* Shimmer animation for buttons */
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+}
+
+/* Light mode specific adjustments */
+.light .glass-morph {
+  @apply bg-white/50 border-gray-200/50 shadow-sm;
+}
+
+.light .text-muted-foreground {
+  @apply text-gray-600;
+}
+
+.light .neo-blur {
+  @apply bg-white/60 border-gray-200;
+}
+
+.light button.glass-morph {
+  @apply bg-white/70 hover:bg-white/90 text-gray-800 border-gray-200;
+}
+
+/* Dark mode improved contrasts */
+.dark button.glass-morph {
+  @apply hover:bg-white/15;
+}
+
+/* Custom Animation */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Improved accessibility in light mode */
+.light .text-stem-blue {
+  color: hsl(210, 100%, 40%);
+}
+
+.light .bg-stem-blue {
+  background-color: hsl(210, 100%, 40%);
+}
+
+.light .hover\:bg-stem-blue:hover {
+  background-color: hsl(210, 100%, 35%);
+}
+
+.light .border-stem-blue {
+  border-color: hsl(210, 100%, 40%);
 }
