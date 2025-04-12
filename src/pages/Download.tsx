@@ -859,10 +859,20 @@ const DownloadPage = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <section className="mb-12 animate-fade-in">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-4xl font-bold text-gradient">
-              Download STEM Assistant
-            </h1>
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+            <div>
+              <h1 className="text-4xl font-bold text-gradient mb-2">
+                Download STEM Assistant
+              </h1>
+              <p className="text-xl text-muted-foreground">
+                Get our accessible app to transform how you experience STEM learning.
+                {totalDownloads > 0 && (
+                  <span className="ml-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-stem-blue/20 text-white">
+                    <Users className="h-4 w-4 mr-1" /> {totalDownloads} downloads
+                  </span>
+                )}
+              </p>
+            </div>
             
             {isAdmin && (
               <Button 
@@ -875,14 +885,39 @@ const DownloadPage = () => {
             )}
           </div>
           
-          <p className="text-xl text-muted-foreground mb-8">
-            Get our accessible app to transform how you experience STEM learning.
-            {totalDownloads > 0 && (
-              <span className="ml-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-stem-blue/20 text-white">
-                <Users className="h-4 w-4 mr-1" /> {totalDownloads} downloads
-              </span>
-            )}
-          </p>
+          {/* Feature Highlights Section */}
+          <div className="glass-morph rounded-lg p-6 mb-8 animate-fade-in animation-delay-100">
+            <h2 className="text-xl font-semibold mb-4">Key Features</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                {
+                  icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
+                  title: "3D Stem Models",
+                  description: "Interactive 3D models of STEM concepts"
+                },
+                {
+                  icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+                  title: "Audio Descriptions",
+                  description: "Detailed audio explanations of visual content"
+                },
+                {
+                  icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>,
+                  title: "Multi-language Support",
+                  description: "Learn in your preferred language"
+                }
+              ].map((feature, index) => (
+                <div key={index} className="flex items-start gap-3 p-3 rounded-md hover:bg-white/5 transition-colors">
+                  <div className="flex-shrink-0 p-2 rounded-full glass-morph">
+                    {feature.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-medium">{feature.title}</h3>
+                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {error && (
             <Alert variant="destructive" className="mb-6">
@@ -892,7 +927,22 @@ const DownloadPage = () => {
             </Alert>
           )}
 
-          <div className="glass-morph rounded-lg p-8 mb-8 shadow-lg hover:shadow-xl transition-all duration-300">
+          <div className="relative">
+            {/* Download Steps Indicator */}
+            <div className="hidden lg:flex justify-between mb-6 px-10 animate-fade-in animation-delay-200">
+              {['Choose Version', 'Download File', 'Install App', 'Get Started'].map((step, index) => (
+                <div key={index} className="flex flex-col items-center">
+                  <div className="h-10 w-10 rounded-full glass-morph flex items-center justify-center text-stem-blue font-semibold mb-2">
+                    {index + 1}
+                  </div>
+                  <div className="text-sm text-center">{step}</div>
+                  {index < 3 && (
+                    <div className={`absolute h-0.5 bg-gradient-to-r from-stem-blue to-stem-purple step-progress-bar-${index + 1}`}></div>
+                  )}
+                </div>
+              ))}
+            </div>
+          
             <Tabs defaultValue="android">
               <TabsList className="glass-morph mb-6">
                 <TabsTrigger value="android" className="data-[state=active]:bg-stem-blue/20 data-[state=active]:text-white">Android</TabsTrigger>
@@ -900,10 +950,26 @@ const DownloadPage = () => {
               </TabsList>
               
               <TabsContent value="android" className="space-y-6">
-                <div className="flex items-center justify-between p-4 glass-morph rounded-lg border border-white/10 shadow-md">
-                  <div className="flex items-center">
-                    <Info className="h-5 w-5 text-stem-blue mr-3" />
-                    <span>Compatible with Android 8.0 and above</span>
+                {/* System Requirements Panel */}
+                <div className="glass-morph rounded-lg p-6 border border-white/10 shadow-md mb-6 animate-fade-in animation-delay-300">
+                  <h3 className="text-lg font-semibold mb-3">System Requirements</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-stem-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>
+                      <span>Android 8.0+</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-stem-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                      <span>2 GB RAM minimum</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-stem-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                      <span>100 MB free space</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-stem-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 9a2 2 0 10-4 0v5a2 2 0 104 0m4-6v6m2-6v6M4 15a2 2 0 104 0 2 2 0 00-4 0zm4-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                      <span>Camera for full functionality</span>
+                    </div>
                   </div>
                 </div>
                 
@@ -921,12 +987,48 @@ const DownloadPage = () => {
                   </Alert>
                 ) : (
                   <div className="space-y-6">
-                    {appVersions.map((v) => (
+                    {/* Version Comparison Box - only show when multiple versions exist */}
+                    {appVersions.length > 1 && (
+                      <div className="glass-morph rounded-lg p-6 border border-white/10 shadow-md mb-6 animate-fade-in animation-delay-400">
+                        <h3 className="text-lg font-semibold mb-3">Version Comparison</h3>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left">
+                            <thead>
+                              <tr className="border-b border-white/10">
+                                <th className="pb-2 pr-4 font-medium">Version</th>
+                                <th className="pb-2 px-4 font-medium">Size</th>
+                                <th className="pb-2 px-4 font-medium">Released</th>
+                                <th className="pb-2 px-4 font-medium">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {appVersions.map((v) => (
+                                <tr key={v.id} className="border-b border-white/5 hover:bg-white/5">
+                                  <td className="py-3 pr-4 font-medium">{v.version_name}</td>
+                                  <td className="py-3 px-4">{v.apk_file ? (v.apk_file.file_size / (1024 * 1024)).toFixed(2) : 0} MB</td>
+                                  <td className="py-3 px-4">{new Date(v.release_date).toLocaleDateString()}</td>
+                                  <td className="py-3 px-4">
+                                    {v.is_public && v.is_required ? (
+                                      <Badge className="bg-stem-blue text-white">Latest</Badge>
+                                    ) : (
+                                      <Badge variant="outline">Previous</Badge>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Version Cards - show most recent at top */}
+                    {appVersions.map((v, index) => (
                       <div 
                         key={v.id} 
-                        className="glass-morph rounded-lg p-6 card-hover border border-white/10 shadow-md"
+                        className={`glass-morph rounded-lg p-6 card-hover border ${v.is_required ? 'border-stem-blue/30' : 'border-white/10'} shadow-md animate-fade-in version-card-delay-${Math.min(index, 5)}`}
                       >
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row justify-between gap-4">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="text-xl font-semibold">Version {v.version_name}</h3>
@@ -942,13 +1044,16 @@ const DownloadPage = () => {
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm">{v.changelog}</p>
+                            <div className="prose prose-sm dark:prose-invert max-w-none">
+                              <p className="text-sm whitespace-pre-line">{v.changelog}</p>
+                            </div>
                           </div>
                           
                           <Button 
-                            className="relative overflow-hidden group 
-                              bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg
-                              transition-all duration-300 border border-blue-500"
+                            className={`relative overflow-hidden group sm:self-start flex-shrink-0
+                              ${v.is_required ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-600 hover:bg-slate-700'} 
+                              text-white shadow-md hover:shadow-lg
+                              transition-all duration-300 border ${v.is_required ? 'border-blue-500' : 'border-slate-500'}`}
                             disabled={downloadStarted}
                             onClick={() => handleDownloadClick(v)}
                           >
@@ -963,6 +1068,10 @@ const DownloadPage = () => {
                                 Download v{v.version_name}
                               </>
                             )}
+                            {/* Add shimmer effect */}
+                            <span className="absolute inset-0 overflow-hidden">
+                              <span className="button-shimmer" />
+                            </span>
                           </Button>
                         </div>
                       </div>

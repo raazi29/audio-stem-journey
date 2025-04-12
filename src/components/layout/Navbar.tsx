@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogIn, LogOut, User, Sun, Moon, Upload, Mail } from "lucide-react";
+import { Menu, X, LogIn, LogOut, User, Upload, Mail } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { supabase } from "@/integrations/supabase/client";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Navbar = () => {
   const location = useLocation();
@@ -11,7 +12,10 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
+  
+  // Check if current page is home page
+  const isHomePage = location.pathname === "/";
 
   // Check if user is logged in and if they're an admin
   useEffect(() => {
@@ -53,11 +57,6 @@ const Navbar = () => {
     setUser(null);
     setIsAdmin(false);
     navigate("/");
-  };
-
-  // Toggle theme
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
   };
 
   // Define navigation links
@@ -136,71 +135,52 @@ const Navbar = () => {
             ))}
           </nav>
           
-          {/* Theme toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="mr-4"
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? (
-              <Sun className="h-[1.2rem] w-[1.2rem]" />
-            ) : (
-              <Moon className="h-[1.2rem] w-[1.2rem]" />
-            )}
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-          
-          {user ? (
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-stem-blue" />
-                <span className="text-sm font-medium truncate max-w-[120px]">
-                  {user.name || user.email}
-                </span>
+          <div className="flex items-center gap-4">
+            {/* Theme toggle - don't show on home page */}
+            {!isHomePage && <ThemeToggle className="mr-2" />}
+            
+            {user ? (
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-stem-blue" />
+                  <span className="text-sm font-medium truncate max-w-[120px]">
+                    {user.name || user.email}
+                  </span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleLogout}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <Button 
-                variant="outline" 
-                size="sm"
-                asChild
-                className={`min-w-[80px] font-medium ${
-                  theme === "light" 
-                    ? "border-stem-blue text-stem-blue hover:bg-stem-blue/10" 
-                    : "hover:bg-white/10"
-                }`}
-              >
-                <Link to="/login" className="flex items-center justify-center">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Login
-                </Link>
-              </Button>
-              <Button 
-                size="sm"
-                asChild
-                className={`min-w-[80px] font-medium shadow-md ${
-                  theme === "light" 
-                    ? "bg-stem-blue hover:bg-stem-blue/90 text-white" 
-                    : ""
-                }`}
-              >
-                <Link to="/signup" className="flex items-center justify-center">
-                  Sign Up
-                </Link>
-              </Button>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center gap-3">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  asChild
+                  className="min-w-[80px] font-medium hover:bg-white/10"
+                >
+                  <Link to="/login" className="flex items-center justify-center">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Login
+                  </Link>
+                </Button>
+                <Button 
+                  size="sm"
+                  asChild
+                  className="min-w-[80px] font-medium shadow-md"
+                >
+                  <Link to="/signup" className="flex items-center justify-center">
+                    Sign Up
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -236,73 +216,58 @@ const Navbar = () => {
               </Link>
             ))}
             
-            {/* Theme toggle in mobile menu */}
-            <button
-              className="flex w-full items-center py-2 px-3 text-sm font-medium rounded-md hover:bg-muted/30"
-              onClick={() => {
-                toggleTheme();
-                setMobileMenuOpen(false);
-              }}
-            >
-              {theme === "dark" ? (
-                <>
-                  <Sun className="mr-2 h-4 w-4" />
-                  Light Mode
-                </>
-              ) : (
-                <>
-                  <Moon className="mr-2 h-4 w-4" />
-                  Dark Mode
-                </>
-              )}
-            </button>
+            {/* Theme toggle in mobile menu - don't show on home page */}
+            {!isHomePage && (
+              <div className="py-2 px-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Theme</span>
+                  <ThemeToggle />
+                </div>
+              </div>
+            )}
             
-            <div className="border-t border-white/10 my-2 pt-2">
-              {user ? (
-                <>
-                  <div className="px-3 py-2 text-sm font-medium">
-                    <User className="inline-block h-4 w-4 text-stem-blue mr-2" />
-                    {user.name || user.email}
-                  </div>
-                  <button
-                    className="w-full text-left block py-2 px-3 text-sm font-medium rounded-md hover:bg-muted/30"
-                    onClick={() => {
-                      handleLogout();
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    <LogOut className="inline-block h-4 w-4 mr-2" />
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <div className="flex flex-col gap-2 px-2 py-2">
-                  <Link
-                    to="/login"
-                    className={`flex items-center justify-center py-2 px-3 text-sm font-medium rounded-md ${
-                      theme === "light" 
-                        ? "border border-stem-blue text-stem-blue" 
-                        : "border border-white/20 hover:bg-muted/30"
-                    }`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <LogIn className="inline-block h-4 w-4 mr-2" />
+            {/* Login/Signup in mobile menu */}
+            {!user ? (
+              <div className="flex flex-col gap-2 mt-2 p-3">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  asChild
+                  className="w-full"
+                >
+                  <Link to="/login" className="flex items-center justify-center">
+                    <LogIn className="mr-2 h-4 w-4" />
                     Login
                   </Link>
-                  <Link
-                    to="/signup"
-                    className={`flex items-center justify-center py-2 px-3 text-sm font-medium rounded-md ${
-                      theme === "light" 
-                        ? "bg-stem-blue text-white" 
-                        : "bg-primary text-primary-foreground"
-                    }`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
+                </Button>
+                <Button size="sm" asChild className="w-full">
+                  <Link to="/signup" className="flex items-center justify-center">
                     Sign Up
                   </Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="p-3 space-y-2">
+                <div className="flex items-center gap-2 py-2 px-1">
+                  <User className="h-4 w-4 text-stem-blue" />
+                  <span className="text-sm font-medium truncate">
+                    {user.name || user.email}
+                  </span>
                 </div>
-              )}
-            </div>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}

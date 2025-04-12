@@ -134,9 +134,11 @@ const SidebarProvider = React.forwardRef<
             className={cn(
               "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
               "[--sidebar-width:16rem] [--sidebar-width-icon:3rem]",
+              style ? Object.entries(style).map(([key, value]) => 
+                `[--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}:${value}]`
+              ).join(' ') : '',
               className
             )}
-            style={style}
             ref={ref}
             {...props}
           >

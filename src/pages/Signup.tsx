@@ -16,11 +16,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Github, Mail, ArrowRight, Download, Loader2 } from "lucide-react";
+import { Github, Mail, ArrowRight, Download, Loader2, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { saveUserInfo } from "@/lib/database";
 import Spline from '@splinetool/react-spline';
 import { signUp } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 // Define the form schema with Zod
 const signupSchema = z.object({
@@ -92,10 +93,47 @@ const Signup = () => {
     setError(null);
 
     try {
-      const { success, user, error } = await signUp(data.email, data.password);
+      const { success, user, error: signupError } = await signUp(data.email, data.password);
       
       if (!success) {
-        throw new Error(error?.message || "Failed to create account");
+        // Handle error message safely with type checking
+        const errorMessage = typeof signupError === 'object' && signupError 
+          ? (signupError as { message?: string }).message || "Failed to create account"
+          : "Failed to create account";
+        throw new Error(errorMessage);
+      }
+      
+      // Save additional user profile data
+      if (user && user.id) {
+        try {
+          // Insert additional profile information into the profiles table
+          const { error: profileError } = await supabase.from('profiles').upsert([
+            {
+              id: user.id,
+              full_name: data.name,
+              email: user.email,
+              preferences: {
+                agreedToTerms: data.terms,
+                signupDate: new Date().toISOString()
+              },
+              updated_at: new Date().toISOString()
+            }
+          ], { 
+            onConflict: 'id',
+            ignoreDuplicates: false 
+          });
+          
+          if (profileError) {
+            const errorMsg = typeof profileError === 'object' && profileError 
+              ? (profileError as { message?: string }).message || "Unknown error"
+              : String(profileError);
+            console.error("Failed to save complete profile:", errorMsg);
+            // Continue anyway as the account was created
+          }
+        } catch (profileErr) {
+          console.error("Error saving user profile:", profileErr);
+          // Continue anyway as the account was created
+        }
       }
       
       // Show success message
@@ -124,15 +162,21 @@ const Signup = () => {
           const mockUser = {
             id: `local-${Date.now()}`,
             email: data.email,
+            name: data.name,
             created_at: new Date().toISOString()
           };
           
           const existingUsers = JSON.parse(localStorage.getItem("localUsers") || "[]");
           existingUsers.push({
             email: data.email,
+            name: data.name,
             password: data.password,
             id: mockUser.id,
-            created_at: mockUser.created_at
+            created_at: mockUser.created_at,
+            preferences: {
+              agreedToTerms: data.terms,
+              signupDate: new Date().toISOString()
+            }
           });
           localStorage.setItem("localUsers", JSON.stringify(existingUsers));
           
@@ -183,7 +227,11 @@ const Signup = () => {
       const { success: saveSuccess, error: saveError } = await saveUserInfo(mockUser);
       
       if (!saveSuccess) {
-        throw new Error(saveError?.message || `Failed to register with ${provider}`);
+        // Handle error message safely with type checking
+        const errorMessage = typeof saveError === 'object' && saveError 
+          ? (saveError as { message?: string }).message || `Failed to register with ${provider}`
+          : `Failed to register with ${provider}`;
+        throw new Error(errorMessage);
       }
       
       // Store user info in local storage (simulating login after registration)
@@ -369,20 +417,37 @@ const Signup = () => {
                   
                   <Button
                     type="submit"
-                    className="w-full bg-stem-purple hover:bg-stem-purple/90 border border-white/20 shadow-lg backdrop-blur-xl text-white"
-                    disabled={isSubmitting}
+                    className="w-full relative overflow-hidden bg-gradient-to-r from-stem-purple to-stem-blue hover:from-stem-purple/90 hover:to-stem-blue/90 border border-white/20 shadow-lg backdrop-blur-xl text-white transition-all duration-300 transform hover:translate-y-[-2px]"
+                    disabled={isSubmitting || success}
                   >
-                    {isSubmitting ? "Creating account..." : "Create Account"}
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_2.5s_infinite]"></span>
+                    <span className="relative flex items-center justify-center">
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating Account...
+                        </>
+                      ) : success ? (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Account Created!
+                        </>
+                      ) : (
+                        <>
+                          Create Account
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </span>
                   </Button>
                 </form>
                 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-white/20"></div>
+                    <div className="w-full border-t border-white/10"></div>
                   </div>
                   <div className="relative flex justify-center text-xs">
-                    <span className="bg-black/50 px-2 text-white/80 backdrop-blur-xl">
+                    <span className="bg-black/50 px-4 py-1 text-white/80 backdrop-blur-xl rounded-full uppercase text-[10px] tracking-wider">
                       Or continue with
                     </span>
                   </div>
@@ -390,22 +455,25 @@ const Signup = () => {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <Button
+                    type="button"
                     variant="outline"
-                    className="backdrop-blur-xl border-white/30 bg-black/30 hover:bg-white/10 hover:border-white/50 text-white shadow-lg"
+                    className="bg-black/30 backdrop-blur-md border-white/20 hover:bg-black/40 text-white transition-all duration-300 hover:scale-105 hover:border-white/40 group flex items-center justify-center"
                     onClick={() => handleOAuthSignIn('GitHub')}
                     disabled={isSubmitting}
                   >
-                    <Github className="mr-2 h-4 w-4" />
-                    GitHub
+                    <Github className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
+                    <span className="group-hover:translate-x-1 transition-transform duration-300">GitHub</span>
                   </Button>
+                  
                   <Button
+                    type="button"
                     variant="outline"
-                    className="backdrop-blur-xl border-white/30 bg-black/30 hover:bg-white/10 hover:border-white/50 text-white shadow-lg"
+                    className="bg-black/30 backdrop-blur-md border-white/20 hover:bg-black/40 text-white transition-all duration-300 hover:scale-105 hover:border-white/40 group flex items-center justify-center"
                     onClick={() => handleOAuthSignIn('Google')}
                     disabled={isSubmitting}
                   >
-                    <Mail className="mr-2 h-4 w-4" />
-                    Google
+                    <Mail className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
+                    <span className="group-hover:translate-x-1 transition-transform duration-300">Google</span>
                   </Button>
                 </div>
                 
@@ -420,12 +488,18 @@ const Signup = () => {
           </CardContent>
           
           <CardFooter className="flex justify-center">
-            <p className="text-white/80">
-              Already have an account?{" "}
-              <Link to="/login" className="text-stem-purple hover:text-stem-purple/80 hover:underline">
-                Sign in
-              </Link>
-            </p>
+            <div className="mt-6 text-center">
+              <p className="text-white/80">
+                Have an account?{" "}
+                <Link 
+                  to="/login" 
+                  className="text-stem-blue hover:text-white font-medium transition-all duration-300 hover:underline relative group"
+                >
+                  Sign in
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-stem-blue group-hover:w-full transition-all duration-300"></span>
+                </Link>
+              </p>
+            </div>
           </CardFooter>
         </Card>
       </div>

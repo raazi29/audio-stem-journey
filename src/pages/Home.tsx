@@ -1,5 +1,5 @@
 import Spline from '@splinetool/react-spline';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,14 +15,14 @@ import {
 
 const getThemeColors = () => ({
   background: "bg-[#121212]",
-  cardBackground: "glass-morph",
+  cardBackground: "glass-morph glass-edge-highlight",
   textPrimary: "text-white",
   textSecondary: "text-white/70",
   border: "border-white/10",
   primary: "blue-500",
   secondary: "purple-500",
   light: "teal-400",
-  buttonPrimaryBg: "bg-stem-blue hover:bg-stem-blue/90 text-white",
+  buttonPrimaryBg: "bg-stem-blue hover:bg-stem-blue/90 text-white button-shimmer",
   buttonOutline: "border-white/20 text-white/90 hover:bg-white/5 hover:border-white/30",
   gradientText: "text-gradient",
   heroGradient: "bg-gradient-radial from-stem-blue/10 via-transparent to-transparent",
@@ -34,6 +34,7 @@ const Home = () => {
   const [splineLoaded, setSplineLoaded] = useState(false);
   const [splineError, setSplineError] = useState(false);
   const [currentScene, setCurrentScene] = useState('');
+  const particlesRef = useRef<HTMLDivElement>(null);
 
   // Single scene URL for dark mode
   const sceneUrl = "https://prod.spline.design/RBd5AtmImgeP5Q40/scene.splinecode";
@@ -44,6 +45,39 @@ const Home = () => {
       setSplineError(false);
       setCurrentScene(sceneUrl);
       console.log(`Loading scene: ${sceneUrl}`);
+    }
+    
+    // Create ambient particles
+    if (particlesRef.current) {
+      const container = particlesRef.current;
+      container.innerHTML = '';
+      
+      // Create particles
+      for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.classList.add('particle');
+        
+        // Random size
+        const size = Math.random() * 8 + 2;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        
+        // Random position
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+        
+        // Random color (blue/purple hues)
+        const hue = 210 + Math.random() * 60;
+        particle.style.backgroundColor = `hsla(${hue}, 100%, 70%, ${Math.random() * 0.3 + 0.1})`;
+        
+        // Random animation duration
+        particle.style.animationDuration = `${Math.random() * 20 + 10}s`;
+        
+        // Random delay
+        particle.style.animationDelay = `${Math.random() * 5}s`;
+        
+        container.appendChild(particle);
+      }
     }
   }, [sceneUrl, currentScene]);
 
@@ -59,6 +93,9 @@ const Home = () => {
 
   return (
     <div className={`min-h-screen relative ${colors.background}`}>
+      {/* Particles background */}
+      <div ref={particlesRef} className="particles-container"></div>
+      
       <section className="relative py-20 px-4 overflow-hidden min-h-[600px] flex items-center">
         <div className={`absolute inset-0 ${colors.heroGradient} z-0`} />
         
@@ -88,9 +125,8 @@ const Home = () => {
 
         {/* Content */}
         <div className="container mx-auto relative z-10">
-          <div className="flex flex-col items-center text-center space-y-6 animate-fade-in 
-            backdrop-blur-md bg-black/20 border border-white/10 
-            p-8 rounded-xl max-w-3xl mx-auto">
+          <div className="premium-glass-card flex flex-col items-center text-center space-y-6 animate-fade-in 
+            p-8 max-w-3xl mx-auto">
             <h1 className={`text-5xl md:text-7xl font-bold tracking-tight
               ${colors.gradientText}
               animate-fade-in
@@ -156,9 +192,8 @@ const Home = () => {
                 <div
                   key={index}
                   className={`${colors.cardBackground} 
-                    border ${colors.border}
                     p-6 rounded-xl text-center transform transition-all duration-300 
-                    card-hover shadow-md
+                    card-hover
                     animation-delay-${(index + 1) * 100}`}
                 >
                   <div className="flex justify-center mb-4">

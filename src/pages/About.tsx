@@ -51,11 +51,26 @@ const About = () => {
               icon: <Presentation className="h-10 w-10 text-teal-400" />,
               title: "Educational Excellence",
               description: "Developed alongside educators to ensure alignment with curriculum standards."
+            },
+            {
+              icon: <HeadphonesIcon className="h-10 w-10 text-amber-400" />,
+              title: "Audio Clarity",
+              description: "Crystal clear audio descriptions with adjustable speed and pitch for personalized learning."
+            },
+            {
+              icon: <VibrateIcon className="h-10 w-10 text-blue-400" />,
+              title: "Haptic Feedback",
+              description: "Advanced tactile responses that represent visual information through touch patterns."
+            },
+            {
+              icon: <Users className="h-10 w-10 text-green-400" />,
+              title: "Community Driven",
+              description: "Developed with continuous feedback from educators and visually impaired students."
             }
           ].map((value, index) => (
             <div 
               key={index} 
-              className="glass-morph p-6 rounded-lg text-center card-hover"
+              className={`glass-morph p-6 rounded-lg text-center card-hover animation-delay-${(index + 1) * 100}`}
             >
               <div className="flex justify-center mb-4">
                 <div className="p-3 rounded-full glass-morph">
@@ -73,58 +88,64 @@ const About = () => {
         <h2 className="text-3xl font-bold text-gradient-accent mb-6">How It Works</h2>
         <div className="glass-morph rounded-lg p-8">
           <div className="space-y-8">
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-shrink-0 p-3 rounded-full glass-morph">
-                <Camera className="h-8 w-8 text-sky-400" />
+            {[
+              {
+                icon: <Camera className="h-8 w-8 text-sky-400" />,
+                title: "Capture",
+                description: "Point your device's camera at printed material, handwritten notes, or diagrams. Our advanced image recognition technology instantly processes the content.",
+                animationClass: "animate-float animation-delay-100"
+              },
+              {
+                icon: <FileText className="h-8 w-8 text-violet-400" />,
+                title: "Process",
+                description: "The app intelligently analyzes the content, recognizing text, equations, graphs, and scientific notation with high accuracy.",
+                animationClass: "animate-float animation-delay-200"
+              },
+              {
+                icon: <HeadphonesIcon className="h-8 w-8 text-teal-400" />,
+                title: "Hear",
+                description: "Content is converted to clear, natural-sounding speech. Complex equations are broken down step-by-step, and diagrams are described in detail.",
+                animationClass: "animate-float animation-delay-300"
+              },
+              {
+                icon: <VibrateIcon className="h-8 w-8 text-amber-400" />,
+                title: "Feel",
+                description: "Haptic feedback provides tactile cues for different content types, creating a multi-sensory learning experience.",
+                animationClass: "animate-float animation-delay-400"
+              }
+            ].map((step, index) => (
+              <div key={index} className={`flex flex-col md:flex-row gap-6 items-start ${step.animationClass}`}>
+                <div className="flex-shrink-0 p-3 rounded-full glass-morph">
+                  {step.icon}
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
+                  <p className="text-muted-foreground">{step.description}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Capture</h3>
-                <p className="text-muted-foreground">
-                  Point your device's camera at printed material, handwritten notes, or diagrams. 
-                  Our advanced image recognition technology instantly processes the content.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-shrink-0 p-3 rounded-full glass-morph">
-                <FileText className="h-8 w-8 text-violet-400" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Process</h3>
-                <p className="text-muted-foreground">
-                  The app intelligently analyzes the content, recognizing text, equations, graphs, 
-                  and scientific notation with high accuracy.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-shrink-0 p-3 rounded-full glass-morph">
-                <HeadphonesIcon className="h-8 w-8 text-teal-400" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Hear</h3>
-                <p className="text-muted-foreground">
-                  Content is converted to clear, natural-sounding speech. Complex equations are broken 
-                  down step-by-step, and diagrams are described in detail.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-shrink-0 p-3 rounded-full glass-morph">
-                <VibrateIcon className="h-8 w-8 text-amber-400" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Feel</h3>
-                <p className="text-muted-foreground">
-                  Haptic feedback provides tactile cues for different content types, creating a 
-                  multi-sensory learning experience.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
+        </div>
+      </section>
+      
+      <section className="max-w-4xl mx-auto mb-16 animate-fade-in">
+        <h2 className="text-3xl font-bold text-gradient-accent mb-6">Key Benefits</h2>
+        <div className="glass-morph rounded-lg p-8">
+          <ul className="space-y-4">
+            {[
+              "Increases independence for visually impaired students in STEM classrooms",
+              "Reduces the gap between visual and non-visual learning experiences",
+              "Improves comprehension of complex STEM concepts through multi-sensory learning",
+              "Integrates seamlessly with existing educational materials and textbooks",
+              "Allows real-time processing of classroom materials as they're presented",
+              "Builds confidence by providing equal access to educational content"
+            ].map((benefit, index) => (
+              <li key={index} className="flex items-start gap-3">
+                <div className="mt-1 flex-shrink-0 h-5 w-5 rounded-full bg-gradient-to-br from-stem-blue to-stem-purple"></div>
+                <p className="text-muted-foreground">{benefit}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
       

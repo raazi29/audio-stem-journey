@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import Spline from '@splinetool/react-spline';
 import { useTheme } from '@/components/ThemeProvider';
-import { AnimationLoadContext } from '@/components/AnimationLoadProvider';
+import { useAnimationLoad } from '@/components/AnimationLoadProvider';
 import { cn } from "@/lib/utils";
 
 interface SplineAnimationProps {
@@ -39,28 +39,55 @@ const SplineAnimation: React.FC<SplineAnimationProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const { theme } = useTheme();
-  const { shouldLoadAnimation } = useContext(AnimationLoadContext);
+  const { shouldLoadAnimation } = useAnimationLoad();
 
   // Function to hide the Spline watermark when loaded in light mode
   const handleLoad = () => {
     setIsLoaded(true);
     
-    // Hide the Spline watermark in light mode
-    if (theme === 'light') {
-      const watermarkElement = document.querySelector('[data-name="watermark"]');
-      if (watermarkElement) {
-        (watermarkElement as HTMLElement).style.display = 'none';
-      }
-    }
+    // Remove the watermark hiding code as we're using CSS to blur it instead
+    // const watermarkElement = document.querySelector('[data-name="watermark"]');
+    // if (watermarkElement && theme === 'light') {
+    //   (watermarkElement as HTMLElement).style.display = 'none';
+    // }
   };
 
   // Re-apply watermark hiding when theme changes
   useEffect(() => {
-    if (isLoaded && theme === 'light') {
+    if (isLoaded) {
+      // Find and apply additional styling to the watermark
       const watermarkElement = document.querySelector('[data-name="watermark"]');
       if (watermarkElement) {
-        (watermarkElement as HTMLElement).style.display = 'none';
+        // Apply additional styles for aggressive hiding
+        const watermarkStyle = watermarkElement as HTMLElement;
+        watermarkStyle.style.transition = 'filter 0.3s ease';
+        watermarkStyle.style.zIndex = '-1'; // Push behind other elements
+        
+        // For light mode, be even more aggressive
+        if (theme === 'light') {
+          watermarkStyle.style.opacity = '0.02';
+          watermarkStyle.style.transform = 'scale(0.3)';
+          // Move it to a less visible position
+          watermarkStyle.style.bottom = '-10px';
+          watermarkStyle.style.right = '-10px';
+        }
       }
+      
+      // Script to completely remove the logo watermark by targeting the shadow DOM
+      const interval = setInterval(() => {
+        const viewer = document.querySelector('spline-viewer');
+        if (viewer && viewer.shadowRoot) {
+          const logo = viewer.shadowRoot.querySelector('#logo');
+          if (logo) {
+            logo.remove(); // remove the logo element entirely
+            console.log("Logo removed!");
+            clearInterval(interval);
+          }
+        }
+      }, 500);
+      
+      // Clean up interval on unmount
+      return () => clearInterval(interval);
     }
   }, [theme, isLoaded]);
 

@@ -111,8 +111,77 @@
     display: none;
   }
 
+  /* Enhanced glass morphism effect */
   .glass-morph {
     @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)];
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Advanced glass highlight effect */
+  .glass-morph::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 70%;
+    height: 100%;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(255, 255, 255, 0.05),
+      transparent
+    );
+    transform: skewX(-15deg);
+    pointer-events: none;
+  }
+  
+  /* Inner glass shadow for depth */
+  .glass-morph::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+  }
+  
+  /* Premium hero card glass effect */
+  .premium-glass-card {
+    @apply backdrop-blur-2xl bg-gradient-to-br from-black/30 via-black/20 to-black/10 
+           border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]
+           rounded-xl relative overflow-hidden;
+    position: relative;
+  }
+  
+  .premium-glass-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg, 
+      transparent, 
+      rgba(255, 255, 255, 0.05), 
+      transparent
+    );
+    transition: 0.5s;
+    pointer-events: none;
+  }
+  
+  .premium-glass-card:hover::before {
+    left: 100%;
+    transition: 0.8s;
+  }
+  
+  /* For edge highlights on glass cards */
+  .glass-edge-highlight {
+    box-shadow: 
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.1), 
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.1),
+      0 4px 20px rgba(0, 0, 0, 0.2);
   }
   
   .light-glass-morph {
@@ -131,9 +200,15 @@
     @apply bg-gradient-to-br from-[hsl(var(--stem-blue))] via-[hsl(var(--stem-purple))] to-[hsl(var(--stem-light))] bg-clip-text text-transparent;
   }
 
-  /* For the 3D hover effect on cards */
+  /* Enhanced hover effect on cards with 3D transform */
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+    @apply transition-all duration-300 hover:shadow-xl;
+    transform: perspective(1000px) translateZ(0);
+    transform-style: preserve-3d;
+  }
+  
+  .card-hover:hover {
+    transform: perspective(1000px) translateZ(10px) translateY(-5px);
   }
 
   /* Shimmer animation for buttons */
@@ -210,190 +285,247 @@
   }
 
   .animate-float {
-    animation: float 6s ease-in-out infinite;
+    animation: float 4s ease-in-out infinite;
   }
 }
 
-/* Light mode specific adjustments */
 .light .glass-morph {
-  @apply bg-white/90 border-gray-200/70 shadow-md;
+  @apply bg-white/60 border-gray-200/50 shadow-sm;
 }
 
 .light .text-muted-foreground {
-  @apply text-gray-700;
+  @apply text-gray-600;
 }
 
 .light .neo-blur {
-  @apply bg-white/95 border-gray-200 shadow-sm;
+  @apply bg-white/80 border-gray-200/50;
 }
 
-/* Button style improvements for light mode */
+/* Adjusted button styles */
 .light button {
-  @apply text-gray-800 border-gray-300;
+  @apply shadow-sm;
 }
 
 .light button.glass-morph {
-  @apply bg-white/95 hover:bg-white border-gray-300/80 text-gray-800 shadow-sm;
+  @apply hover:bg-white/70;
 }
 
 .light button.bg-stem-blue, 
-.light button.bg-stem-blue\/70, 
-.light button.bg-stem-blue\/90 {
-  @apply bg-blue-600 hover:bg-blue-700 text-white border-blue-700/20;
+.light button.hover\:bg-stem-blue:hover, 
+.light a.bg-stem-blue,
+.light a.hover\:bg-stem-blue:hover {
+  @apply text-white;
 }
 
-/* Card improvements for light mode */
 .light .card {
-  @apply shadow-md bg-white/90 border-gray-200/70;
+  @apply bg-white shadow-sm border-gray-200;
 }
 
-/* Improved dark mode contrasts */
 .dark button.glass-morph {
-  @apply hover:bg-white/15 text-white;
+  @apply shadow-[0_4px_12px_-2px_rgba(0,0,0,0.4)] hover:shadow-[0_8px_30px_-2px_rgba(0,0,0,0.6)];
 }
 
-/* Improved animation for auth pages */
 .absolute.inset-0.flex.items-center.justify-center .card {
-  @apply shadow-xl animate-float;
+  @apply glass-morph;
 }
 
-/* Custom Animation */
 .animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: fadeIn 0.8s ease-in-out forwards;
 }
 
 @keyframes fadeIn {
-  from {
+  0% {
     opacity: 0;
     transform: translateY(10px);
   }
-  to {
+  100% {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-/* Improved accessibility in light mode */
+/* Gradient text on light mode */
 .light .text-stem-blue {
-  color: hsl(210, 100%, 40%);
+  @apply text-blue-600;
 }
 
 .light .bg-stem-blue {
-  background-color: hsl(210, 80%, 50%);
+  @apply bg-blue-600;
 }
 
 .light .hover\:bg-stem-blue:hover {
-  background-color: hsl(210, 80%, 45%);
+  @apply hover:bg-blue-700;
 }
 
 .light .border-stem-blue {
-  border-color: hsl(210, 80%, 50%);
+  @apply border-blue-600;
 }
 
-/* Text improvements for light mode */
+/* Light mode text color adjustments */
 .light .text-white\/70 {
-  @apply text-gray-700;
+  @apply text-gray-600;
 }
 
 .light .text-white\/90 {
-  @apply text-gray-900;
+  @apply text-gray-800;
 }
 
 .light .bg-black\/20 {
-  @apply bg-white/90;
+  @apply bg-white/80;
 }
 
 .light input.glass-morph, .light input.bg-white\/5 {
-  @apply bg-white text-gray-900 border-gray-300;
+  @apply bg-white border-gray-200 text-gray-900;
 }
 
-/* Light mode specific styles */
 .light {
-  background-color: #f8fafc;
-  background-image: 
-    linear-gradient(to right, rgba(235, 240, 255, 0.2) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(235, 240, 255, 0.2) 1px, transparent 1px);
-  background-size: 50px 50px;
+  .glass-nav {
+    @apply backdrop-blur-md bg-white/70 border-gray-200/50 shadow-sm;
+  }
 }
 
-/* Enhanced glass morphism for light mode */
+/* Enhanced glass-morphism for light mode */
 .light .glass-morph {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(230, 236, 250, 0.8);
+  @apply backdrop-blur-md bg-white/50 border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.1)];
   box-shadow: 
-    0 8px 32px rgba(100, 120, 220, 0.1),
-    0 2px 8px rgba(100, 120, 220, 0.05);
-  backdrop-filter: blur(12px);
+    0 2px 10px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-/* Button enhancements for light mode */
 .light .button-primary {
-  background: linear-gradient(to right, #3b82f6, #6366f1);
-  border: none;
-  color: white;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-  transition: all 0.3s ease;
+  @apply bg-gradient-to-r from-blue-600 to-blue-700 text-white 
+         shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 
+         transition-all duration-200;
 }
 
 .light .button-primary:hover {
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+  @apply bg-gradient-to-r from-blue-700 to-blue-800;
   transform: translateY(-1px);
 }
 
-/* Text gradient for headings in light mode */
+/* Light mode text gradient */
 .light .text-gradient {
-  background: linear-gradient(to right, #1d4ed8, #7c3aed);
-  -webkit-background-clip: text;
-  color: transparent;
+  @apply bg-gradient-to-br from-gray-800 to-gray-600 bg-clip-text text-transparent;
 }
 
-/* Animation for content fade-in */
+/* Better fade-in animation */
 .animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes fadeIn {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
-  to {
+  100% {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-/* Particle animation */
+/* Particle effects */
 .particles-container {
   position: absolute;
-  width: 100%;
-  height: 100%;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
+  pointer-events: none;
   z-index: 0;
 }
 
 .particle {
   position: absolute;
   border-radius: 50%;
-  animation: float-around linear infinite;
+  opacity: 0.3;
+  animation: float-around 15s infinite linear;
 }
 
 @keyframes float-around {
   0% {
-    transform: translate(0, 0) rotate(0deg);
+    transform: translateY(0) translateX(0) rotate(0deg);
   }
-  25% {
-    transform: translate(10px, 20px) rotate(90deg);
+  33% {
+    transform: translateY(-50px) translateX(100px) rotate(120deg);
   }
-  50% {
-    transform: translate(20px, -10px) rotate(180deg);
-  }
-  75% {
-    transform: translate(-10px, -20px) rotate(270deg);
+  66% {
+    transform: translateY(50px) translateX(-50px) rotate(240deg);
   }
   100% {
-    transform: translate(0, 0) rotate(360deg);
+    transform: translateY(0) translateX(0) rotate(360deg);
   }
 }
+
+/* Spline watermark blur styles - much more aggressive now */
+[data-name="watermark"] {
+  filter: blur(8px) opacity(0.05) !important;
+  transition: filter 0.3s ease !important;
+  transform: scale(0.5) !important;
+  position: relative !important;
+  pointer-events: none !important;
+}
+
+/* Different style for light mode watermark */
+.light [data-name="watermark"] {
+  filter: blur(8px) opacity(0.02) brightness(0.1) !important;
+  visibility: hidden !important;
+}
+
+[data-name="watermark"]:hover {
+  filter: blur(0) opacity(1) brightness(1) !important;
+  transform: scale(1) !important;
+  visibility: visible !important;
+}
+
+.progress-bar-gradient {
+  background: linear-gradient(to right, hsl(var(--stem-blue)), hsl(var(--stem-purple)));
+  width: 25%;
+  left: 12.5%;
+  top: 20px;
+  transform: translateY(-50%);
+}
+
+/* Download steps progress bars */
+.step-progress-bar-1 {
+  width: 25%;
+  left: 12.5%;
+  top: 20px;
+  transform: translateY(-50%);
+}
+
+.step-progress-bar-2 {
+  width: 25%;
+  left: 37.5%;
+  top: 20px;
+  transform: translateY(-50%);
+}
+
+.step-progress-bar-3 {
+  width: 25%;
+  left: 62.5%;
+  top: 20px;
+  transform: translateY(-50%);
+}
+
+/* Animation delay classes */
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-400 { animation-delay: 400ms; }
+.animation-delay-500 { animation-delay: 500ms; }
+.animation-delay-600 { animation-delay: 600ms; }
+.animation-delay-700 { animation-delay: 700ms; }
+.animation-delay-800 { animation-delay: 800ms; }
+.animation-delay-900 { animation-delay: 900ms; }
+.animation-delay-1000 { animation-delay: 1000ms; }
+
+/* Version card animation delays */
+.version-card-delay-0 { animation-delay: 500ms; }
+.version-card-delay-1 { animation-delay: 600ms; }
+.version-card-delay-2 { animation-delay: 700ms; }
+.version-card-delay-3 { animation-delay: 800ms; }
+.version-card-delay-4 { animation-delay: 900ms; }
+.version-card-delay-5 { animation-delay: 1000ms; }
+

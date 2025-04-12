@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -15,7 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowRight, Mail, Github, Loader2 } from "lucide-react";
+import { ArrowRight, Mail, Github, Loader2, Eye, EyeOff, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getUserInfo } from "@/lib/database";
 import Spline from '@splinetool/react-spline';
@@ -25,6 +26,7 @@ import { signIn } from "@/lib/auth";
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
+  rememberMe: z.boolean().optional().default(false)
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -36,6 +38,7 @@ const Login = () => {
   const [error, setError] = useState<string | null>(null);
   const [splineLoaded, setSplineLoaded] = useState(false);
   const [splineError, setSplineError] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Handle Spline load events
   const handleSplineLoad = () => {
@@ -53,11 +56,13 @@ const Login = () => {
     register,
     handleSubmit,
     formState: { errors },
+    setValue
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      email: localStorage.getItem('rememberedEmail') || "",
       password: "",
+      rememberMe: Boolean(localStorage.getItem('rememberedEmail'))
     },
   });
 
@@ -65,21 +70,30 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
     setError(null);
+    
+    // Handle remember me functionality
+    if (data.rememberMe) {
+      localStorage.setItem('rememberedEmail', data.email);
+    } else {
+      localStorage.removeItem('rememberedEmail');
+    }
 
     try {
+      // Call the signIn function with email and password
       const { success, user, error } = await signIn(data.email, data.password);
       
-      if (!success) {
-        throw new Error(error?.message || "Authentication failed");
+      if (!success || error) {
+        // Format error message for display
+        const errorMessage = typeof error === 'object' && error 
+          ? (error as { message?: string }).message || "Authentication failed"
+          : "Authentication failed";
+        throw new Error(errorMessage);
       }
       
       if (user) {
-        // Store user in localStorage for persistence
-        localStorage.setItem("user", JSON.stringify(user));
-        
         toast({
           title: "Signed in successfully!",
-          description: "You have been logged in.",
+          description: "Welcome back to STEM Assistant.",
         });
         
         // Redirect to the home page
@@ -91,36 +105,6 @@ const Login = () => {
       console.error("Login error:", error);
       
       let errorMessage = (error as Error).message || "An unexpected error occurred. Please try again.";
-      
-      // Provide a more user-friendly message for connection errors
-      if (errorMessage.includes("Failed to fetch") || errorMessage.includes("NetworkError")) {
-        errorMessage = "Unable to connect to the server. Login will work in offline mode.";
-        
-        // Attempt offline login
-        try {
-          const localUsers = JSON.parse(localStorage.getItem("localUsers") || "[]");
-          const localUser = localUsers.find((u: any) => u.email === data.email && u.password === data.password);
-          
-          if (localUser) {
-            localStorage.setItem("user", JSON.stringify({
-              id: localUser.id,
-              email: localUser.email,
-              created_at: localUser.created_at
-            }));
-            
-            toast({
-              title: "Signed in with offline mode",
-              description: "Connected in local mode. Some features may be limited.",
-            });
-            
-            navigate("/");
-            return;
-          }
-        } catch (e) {
-          console.error("Error with offline login:", e);
-        }
-      }
-      
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -154,6 +138,35 @@ const Login = () => {
     } catch (error) {
       console.error(`${provider} sign in error:`, error);
       setError(`An error occurred with ${provider} sign in. Please try again.`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  // Handle guest login
+  const handleGuestLogin = () => {
+    setIsSubmitting(true);
+    
+    try {
+      const guestUser = {
+        id: `guest-${Date.now()}`,
+        email: 'guest@stemassistant.com',
+        name: 'Guest User',
+        created_at: new Date().toISOString(),
+        isGuest: true
+      };
+      
+      localStorage.setItem("user", JSON.stringify(guestUser));
+      
+      toast({
+        title: "Signed in as guest",
+        description: "You have limited access. Create an account for full features.",
+      });
+      
+      navigate("/");
+    } catch (error) {
+      console.error("Guest login error:", error);
+      setError("Unable to sign in as guest. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -209,6 +222,7 @@ const Login = () => {
                   placeholder="name@example.com"
                   className="backdrop-blur-xl border-white/30 bg-black/30 focus:border-white/50 shadow-inner text-white"
                   aria-invalid={!!errors.email}
+                  autoComplete="email"
                   {...register("email")}
                 />
                 {errors.email && (
@@ -226,73 +240,119 @@ const Login = () => {
                     Forgot password?
                   </Link>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  className="backdrop-blur-xl border-white/30 bg-black/30 focus:border-white/50 shadow-inner text-white"
-                  aria-invalid={!!errors.password}
-                  {...register("password")}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    className="backdrop-blur-xl border-white/30 bg-black/30 focus:border-white/50 shadow-inner text-white pr-10"
+                    aria-invalid={!!errors.password}
+                    autoComplete="current-password"
+                    {...register("password")}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
                 {errors.password && (
                   <p className="text-sm text-red-400">{errors.password.message}</p>
                 )}
               </div>
               
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="remember-me"
+                  className="border-white/30 data-[state=checked]:bg-stem-blue data-[state=checked]:border-stem-blue"
+                  {...register("rememberMe")}
+                />
+                <Label htmlFor="remember-me" className="text-sm text-white/80">
+                  Remember me
+                </Label>
+              </div>
+              
               <Button
                 type="submit"
-                className="w-full bg-stem-blue hover:bg-stem-blue/90 border border-white/20 shadow-lg backdrop-blur-xl text-white"
+                className="w-full relative overflow-hidden bg-gradient-to-r from-stem-blue to-stem-purple hover:from-stem-blue/90 hover:to-stem-purple/90 border border-white/20 shadow-lg backdrop-blur-xl text-white transition-all duration-300 transform hover:translate-y-[-2px]"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Signing in..." : "Sign In"}
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_2.5s_infinite]"></span>
+                <span className="relative flex items-center justify-center">
+                  {isSubmitting ? "Signing in..." : "Sign In"}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </span>
               </Button>
             </form>
             
-            <div className="relative">
+            <div className="relative flex items-center justify-center">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/20"></div>
+                <div className="w-full border-t border-white/10"></div>
               </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-black/50 px-2 text-white/80 backdrop-blur-xl">
-                  Or continue with
-                </span>
+              <div className="relative px-4 text-xs uppercase text-white/50 bg-black/30 backdrop-blur-sm rounded-full">
+                or continue with
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <Button
+                type="button"
                 variant="outline"
-                className="backdrop-blur-xl border-white/30 bg-black/30 hover:bg-white/10 hover:border-white/50 text-white shadow-lg"
+                className="bg-black/30 backdrop-blur-md border-white/20 hover:bg-black/40 text-white transition-all duration-300 hover:scale-105 hover:border-white/40"
                 onClick={() => handleOAuthSignIn('GitHub')}
                 disabled={isSubmitting}
               >
-                <Github className="mr-2 h-4 w-4" />
-                GitHub
+                <Github className="h-5 w-5" />
+                <span className="sr-only">GitHub</span>
               </Button>
+              
               <Button
+                type="button"
                 variant="outline"
-                className="backdrop-blur-xl border-white/30 bg-black/30 hover:bg-white/10 hover:border-white/50 text-white shadow-lg"
+                className="bg-black/30 backdrop-blur-md border-white/20 hover:bg-black/40 text-white transition-all duration-300 hover:scale-105 hover:border-white/40"
                 onClick={() => handleOAuthSignIn('Google')}
                 disabled={isSubmitting}
               >
-                <Mail className="mr-2 h-4 w-4" />
-                Google
+                <GoogleIcon className="h-5 w-5" />
+                <span className="sr-only">Google</span>
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                className="bg-black/30 backdrop-blur-md border-white/20 hover:bg-black/40 text-white transition-all duration-300 hover:scale-105 hover:border-white/40"
+                onClick={() => handleOAuthSignIn('Microsoft')}
+                disabled={isSubmitting}
+              >
+                <MicrosoftIcon className="h-5 w-5" />
+                <span className="sr-only">Microsoft</span>
               </Button>
             </div>
             
-            <div className="flex justify-center mt-6">
-              <Link to="/download" className="bg-stem-blue/80 hover:bg-stem-blue border border-white/20 shadow-lg text-white px-4 py-2 rounded-md text-sm flex items-center backdrop-blur-xl transition-all duration-200">
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Skip to Download
-              </Link>
-            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full border border-white/10 text-white/80 hover:text-white hover:bg-white/5 transition-all duration-300 group"
+              onClick={handleGuestLogin}
+              disabled={isSubmitting}
+            >
+              <LogIn className="mr-2 h-4 w-4 group-hover:animate-pulse" />
+              <span className="group-hover:translate-x-1 transition-transform duration-300">Continue as Guest</span>
+            </Button>
           </CardContent>
           
-          <CardFooter className="flex justify-center">
-            <p className="text-white/80">
+          <CardFooter className="flex justify-center border-t border-white/10 pt-6">
+            <p className="text-sm text-white/70">
               Don't have an account?{" "}
-              <Link to="/signup" className="text-stem-blue hover:text-stem-blue/80 hover:underline">
+              <Link 
+                to="/signup" 
+                className="text-stem-blue hover:text-white font-medium transition-all duration-300 hover:underline relative group"
+              >
                 Sign up
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-stem-blue group-hover:w-full transition-all duration-300"></span>
               </Link>
             </p>
           </CardFooter>
@@ -301,5 +361,36 @@ const Login = () => {
     </div>
   );
 };
+
+// Custom icons
+const GoogleIcon = ({ className }: { className?: string }) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    className={className}
+    height="24" 
+    width="24" 
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path 
+      fill="currentColor" 
+      d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
+    />
+  </svg>
+);
+
+const MicrosoftIcon = ({ className }: { className?: string }) => (
+  <svg 
+    viewBox="0 0 23 23" 
+    className={className}
+    height="23" 
+    width="23" 
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path fill="currentColor" d="M0 0h11v11H0z"/>
+    <path fill="currentColor" d="M12 0h11v11H12z"/>
+    <path fill="currentColor" d="M0 12h11v11H0z"/>
+    <path fill="currentColor" d="M12 12h11v11H12z"/>
+  </svg>
+);
 
 export default Login;

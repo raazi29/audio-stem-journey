@@ -19,4 +19,25 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Optimize build for production
+    minify: 'terser',
+    cssMinify: true,
+    sourcemap: false,
+    // Split chunks for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-label'],
+          'supabase': ['@supabase/supabase-js'],
+          'chart': ['recharts']
+        }
+      }
+    }
+  },
+  // Optimize for Vercel deployment
+  optimizeDeps: {
+    include: ['@supabase/supabase-js']
+  }
 }));

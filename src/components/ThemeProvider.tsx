@@ -1,5 +1,5 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 type Theme = "dark" | "light";
 
@@ -30,25 +30,45 @@ export function ThemeProvider({
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   );
+  
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
 
   useEffect(() => {
     const root = window.document.documentElement;
     
-    root.classList.remove("light", "dark");
-    
-    if (theme === "light") {
-      root.classList.add("light");
-    } else {
-      root.classList.add("dark"); 
+    // If it's home page, enforce dark mode
+    if (isHomePage) {
+      root.classList.remove("light");
+      
+      if (!root.classList.contains("dark")) {
+        root.classList.add("dark");
+      }
+      
+      if (localStorage.getItem(storageKey) !== "dark") {
+        localStorage.setItem(storageKey, "dark");
+      }
+      return;
     }
-  }, [theme]);
+    
+    // For other pages, apply the selected theme
+    root.classList.remove("light", "dark");
+    root.classList.add(theme);
+    localStorage.setItem(storageKey, theme);
+  }, [theme, storageKey, isHomePage]);
+
+  // Theme setter for non-home pages
+  const handleSetTheme = (newTheme: Theme) => {
+    if (isHomePage) {
+      console.log("Theme switching is disabled on the home page - using dark mode only");
+      return;
+    }
+    setTheme(newTheme);
+  };
 
   const value = {
-    theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
-      setTheme(theme);
-    },
+    theme: isHomePage ? "dark" : theme,
+    setTheme: handleSetTheme,
   };
 
   return (

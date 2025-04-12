@@ -66,17 +66,28 @@ export const signUp = async (email: string, password: string): Promise<{
         created_at: data.user.created_at,
       };
       
-      // Create user profile in Supabase
-      const { success, error: profileError } = await upsertUserProfile(userData);
-      
-      if (!success) {
-        console.error("Error creating user profile:", profileError);
-      } else {
-        // Track signup activity
-        trackUserActivity(userData.id!, 'signup', {}, {
-          method: 'email',
-          timestamp: new Date().toISOString()
-        }).catch(err => console.error("Error tracking signup:", err));
+      // Create user profile in Supabase profiles table
+      try {
+        // Insert directly into the profiles table
+        const { error: profileError } = await supabase.from('profiles').insert([
+          { 
+            id: userData.id, 
+            email: userData.email,
+            created_at: userData.created_at
+          }
+        ]);
+        
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+        } else {
+          // Track signup activity
+          trackUserActivity(userData.id!, 'signup', {}, {
+            method: 'email',
+            timestamp: new Date().toISOString()
+          }).catch(err => console.error("Error tracking signup:", err));
+        }
+      } catch (profileErr) {
+        console.error("Error inserting profile:", profileErr);
       }
       
       // Store user data in localStorage
@@ -124,14 +135,14 @@ export const signIn = async (email: string, password: string): Promise<{
   error?: any 
 }> => {
   try {
-    // Try Supabase auth first
+    // Try Supabase auth using signInWithPassword
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     
     if (error) {
-      console.error("Supabase signin error:", error);
+      console.error('Login error:', error.message);
       
       // If there's a network issue, try local authentication
       if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
@@ -146,9 +157,11 @@ export const signIn = async (email: string, password: string): Promise<{
             const userData: User = {
               id: user.id,
               email: user.email,
+              name: user.name,
               created_at: user.created_at
             };
             
+            console.log('Login success (offline mode):', userData);
             localStorage.setItem("user", JSON.stringify(userData));
             return { success: true, user: userData };
           } else {
@@ -169,6 +182,8 @@ export const signIn = async (email: string, password: string): Promise<{
         email: data.user.email || email,
         created_at: data.user.created_at,
       };
+      
+      console.log('Login success:', userData);
       
       // Ensure user profile exists
       upsertUserProfile(userData).catch(err => {
@@ -203,6 +218,7 @@ export const signIn = async (email: string, password: string): Promise<{
         const userData: User = {
           id: user.id,
           email: user.email,
+          name: user.name,
           created_at: user.created_at
         };
         

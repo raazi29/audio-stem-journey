@@ -3,12 +3,40 @@ import { trackUserActivity } from "./user-service";
 
 // Function to save user info to the database without authentication
 export const saveUserInfo = async (userData: {
+  id?: string;
   email: string;
   name?: string;
   preferences?: Record<string, any>;
 }) => {
   try {
-    // Check if user already exists
+    // If we have an ID (from Supabase Auth), use it directly
+    if (userData.id) {
+      // Update or insert user data with the provided ID
+      const { data, error } = await supabase
+        .from('users')
+        .upsert({
+          id: userData.id,
+          email: userData.email,
+          name: userData.name || null,
+          preferences: userData.preferences || {},
+          updated_at: new Date().toISOString(),
+          created_at: new Date().toISOString() // Only used for new records
+        }, { 
+          onConflict: 'id',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        console.error('Error upserting user with ID:', error);
+        return { success: false, error };
+      }
+      
+      return { success: true, user: data || userData };
+    }
+    
+    // If no ID provided, check if user already exists by email
     const { data: existingUser, error: searchError } = await supabase
       .from('users')
       .select('id')

@@ -117,11 +117,11 @@ const App = () => {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark">
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+      <BrowserRouter>
+        <ThemeProvider defaultTheme="dark">
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
             <AnimationLoadProvider>
               <Routes>
                 <Route path="/" element={<Layout />}>
@@ -141,9 +141,9 @@ const App = () => {
                 </Route>
               </Routes>
             </AnimationLoadProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
+          </TooltipProvider>
+        </ThemeProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 };
