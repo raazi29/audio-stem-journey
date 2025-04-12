@@ -6,6 +6,10 @@ import { cn } from "@/lib/utils"
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
 
+// CSS classes for dynamic colors
+const chartIndicatorClass = "chart-indicator";
+const chartLegendItemClass = "chart-legend-item";
+
 export type ChartConfig = {
   [k in string]: {
     label?: React.ReactNode
@@ -56,6 +60,7 @@ const ChartContainer = React.forwardRef<
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
+        <ChartModuleStyle />
         <RechartsPrimitive.ResponsiveContainer>
           {children}
         </RechartsPrimitive.ResponsiveContainer>
@@ -204,9 +209,10 @@ const ChartTooltipContent = React.forwardRef<
                       <itemConfig.icon />
                     ) : (
                       !hideIndicator && (
-                        <div
+                        <ChartIndicator 
+                          color={indicatorColor}
                           className={cn(
-                            "shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]",
+                            "shrink-0 rounded-[2px]",
                             {
                               "h-2.5 w-2.5": indicator === "dot",
                               "w-1": indicator === "line",
@@ -215,12 +221,6 @@ const ChartTooltipContent = React.forwardRef<
                               "my-0.5": nestLabel && indicator === "dashed",
                             }
                           )}
-                          style={
-                            {
-                              "--color-bg": indicatorColor,
-                              "--color-border": indicatorColor,
-                            } as React.CSSProperties
-                          }
                         />
                       )
                     )}
@@ -297,11 +297,9 @@ const ChartLegendContent = React.forwardRef<
               {itemConfig?.icon && !hideIcon ? (
                 <itemConfig.icon />
               ) : (
-                <div
+                <ChartIndicator 
+                  color={item.color}
                   className="h-2 w-2 shrink-0 rounded-[2px]"
-                  style={{
-                    backgroundColor: item.color,
-                  }}
                 />
               )}
               {itemConfig?.label}
@@ -353,6 +351,68 @@ function getPayloadConfigFromPayload(
     : config[key as keyof typeof config]
 }
 
+// Add CSS Module for Chart Styles
+const ChartModuleStyle = () => {
+  return (
+    <style
+      dangerouslySetInnerHTML={{
+        __html: `
+          /* Generate classes for different colors */
+          .chart-indicator { 
+            background-color: currentColor;
+            border-color: currentColor;
+          }
+          
+          .chart-legend-item {
+            background-color: currentColor;
+          }
+          
+          /* Specific color classes - will be populated dynamically at runtime */
+        `
+      }}
+    />
+  );
+};
+
+// Function to convert color to CSS class name
+function colorToClassName(color: string | undefined): string {
+  if (!color) return '';
+  // Remove # and convert to lowercase for consistent class names
+  return `color-${color.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`;
+}
+
+// Reusable component for chart indicator with dynamic color
+const ChartIndicator = ({ color, className }: { color?: string, className?: string }) => {
+  // Create a dynamic style element for this specific color
+  const colorClass = colorToClassName(color);
+  
+  React.useEffect(() => {
+    if (color && colorClass) {
+      // Check if style already exists
+      const existingStyle = document.getElementById(`chart-style-${colorClass}`);
+      if (!existingStyle) {
+        // Create style element with this specific color
+        const style = document.createElement('style');
+        style.id = `chart-style-${colorClass}`;
+        style.innerHTML = `
+          .chart-indicator.${colorClass} {
+            background-color: ${color};
+            border-color: ${color};
+          }
+          .chart-legend-item.${colorClass} {
+            background-color: ${color};
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+  }, [color, colorClass]);
+  
+  return (
+    <div className={cn("chart-indicator", colorClass, className)} />
+  );
+};
+
 export {
   ChartContainer,
   ChartTooltip,
@@ -360,4 +420,6 @@ export {
   ChartLegend,
   ChartLegendContent,
   ChartStyle,
+  ChartModuleStyle,
+  ChartIndicator,
 }

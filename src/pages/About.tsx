@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -22,14 +21,14 @@ const About = () => {
           especially those with visual impairments.
         </p>
         
-        <div className="glass-morph rounded-lg p-8 mb-12 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300">
+        <div className="glass-morph rounded-lg p-8 mb-12">
           <h2 className="text-2xl font-semibold mb-4">Our Mission</h2>
-          <p className="mb-6">
+          <p className="mb-6 text-muted-foreground">
             We believe that education should be accessible to everyone, regardless of physical ability. 
             Our mission is to break down barriers in STEM education by transforming visual content into 
             accessible formats that work for visually impaired students.
           </p>
-          <p>
+          <p className="text-muted-foreground">
             Through innovative technology and thoughtful design, we're creating tools that enable 
             independent learning, boost confidence, and open doors to STEM careers for visually 
             impaired individuals.
@@ -39,24 +38,24 @@ const About = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {[
             {
-              icon: <Heart className="h-10 w-10 text-stem-blue" />,
+              icon: <Heart className="h-10 w-10 text-rose-400" />,
               title: "Inclusive Design",
               description: "Built from the ground up with accessibility as a priority, not an afterthought."
             },
             {
-              icon: <BookOpen className="h-10 w-10 text-stem-purple" />,
+              icon: <BookOpen className="h-10 w-10 text-violet-400" />,
               title: "STEM Focus",
               description: "Specialized tools to tackle the unique challenges of science, technology, engineering, and math."
             },
             {
-              icon: <Presentation className="h-10 w-10 text-stem-light" />,
+              icon: <Presentation className="h-10 w-10 text-teal-400" />,
               title: "Educational Excellence",
               description: "Developed alongside educators to ensure alignment with curriculum standards."
             }
           ].map((value, index) => (
             <div 
               key={index} 
-              className="glass-morph p-6 rounded-lg text-center card-hover shadow-[0_4px_14px_0_rgb(0,0,0,0.2)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.3)] transition-all duration-300"
+              className="glass-morph p-6 rounded-lg text-center card-hover"
             >
               <div className="flex justify-center mb-4">
                 <div className="p-3 rounded-full glass-morph">
@@ -72,11 +71,11 @@ const About = () => {
       
       <section className="max-w-4xl mx-auto mb-16 animate-fade-in">
         <h2 className="text-3xl font-bold text-gradient-accent mb-6">How It Works</h2>
-        <div className="glass-morph rounded-lg p-8 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300">
+        <div className="glass-morph rounded-lg p-8">
           <div className="space-y-8">
             <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-shrink-0 p-3 rounded-full glass-morph shadow-lg">
-                <Camera className="h-8 w-8 text-stem-blue" />
+              <div className="flex-shrink-0 p-3 rounded-full glass-morph">
+                <Camera className="h-8 w-8 text-sky-400" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold mb-2">Capture</h3>
@@ -88,8 +87,8 @@ const About = () => {
             </div>
             
             <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-shrink-0 p-3 rounded-full glass-morph shadow-lg">
-                <FileText className="h-8 w-8 text-stem-purple" />
+              <div className="flex-shrink-0 p-3 rounded-full glass-morph">
+                <FileText className="h-8 w-8 text-violet-400" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold mb-2">Process</h3>
@@ -101,8 +100,8 @@ const About = () => {
             </div>
             
             <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-shrink-0 p-3 rounded-full glass-morph shadow-lg">
-                <HeadphonesIcon className="h-8 w-8 text-stem-light" />
+              <div className="flex-shrink-0 p-3 rounded-full glass-morph">
+                <HeadphonesIcon className="h-8 w-8 text-teal-400" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold mb-2">Hear</h3>
@@ -114,8 +113,8 @@ const About = () => {
             </div>
             
             <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-shrink-0 p-3 rounded-full glass-morph shadow-lg">
-                <VibrateIcon className="h-8 w-8 text-stem-blue" />
+              <div className="flex-shrink-0 p-3 rounded-full glass-morph">
+                <VibrateIcon className="h-8 w-8 text-amber-400" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold mb-2">Feel</h3>
@@ -131,11 +130,11 @@ const About = () => {
       
       <section className="max-w-4xl mx-auto mb-16 animate-fade-in">
         <h2 className="text-3xl font-bold text-gradient-accent mb-6">Our Team</h2>
-        <div className="glass-morph rounded-lg p-8 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300">
+        <div className="glass-morph rounded-lg p-8">
           <div className="flex items-center justify-center mb-8">
-            <Users className="h-16 w-16 text-stem-purple" />
+            <Users className="h-16 w-16 text-violet-400" />
           </div>
-          <p className="text-center">
+          <p className="text-center text-muted-foreground">
             We're a diverse team of educators, engineers, accessibility specialists, and STEM enthusiasts. 
             Many of our team members have personal connections to the visually impaired community, 
             making our mission deeply personal.
@@ -143,14 +142,13 @@ const About = () => {
         </div>
       </section>
       
-      <section className="max-w-4xl mx-auto text-center animate-fade-in">
+      <section className="max-w-4xl mx-auto text-center mb-16 animate-fade-in">
         <h2 className="text-3xl font-bold text-gradient mb-6">Get Started Today</h2>
         <p className="text-xl text-muted-foreground mb-8">
           Experience the future of accessible STEM education.
         </p>
         <Button 
           size="lg" 
-          className="glass-morph bg-stem-blue/20 hover:bg-stem-blue/40 text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.4)] transition-all duration-300"
           asChild
         >
           <Link to="/download">

@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -116,6 +115,10 @@
     @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)];
   }
   
+  .light-glass-morph {
+    @apply backdrop-blur-md bg-white/70 border border-blue-100/50 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.1)];
+  }
+  
   .neo-blur {
     @apply backdrop-blur-2xl bg-black/40 border border-white/10 rounded-lg;
   }
@@ -162,11 +165,58 @@
     transform: translateX(-100%);
     animation: shimmer 2s infinite;
   }
+
+  /* Animation delay utility classes for features */
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+  
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+  
+  .animation-delay-500 {
+    animation-delay: 500ms;
+  }
+  
+  .animation-delay-600 {
+    animation-delay: 600ms;
+  }
+  
+  /* CSS variable for custom animation delay */
+  .light .animation-delay-custom {
+    --animation-delay: 0.2;
+  }
+
+  /* Floating animation */
+  @keyframes float {
+    0% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+    100% {
+      transform: translateY(0px);
+    }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
 }
 
 /* Light mode specific adjustments */
 .light .glass-morph {
-  @apply bg-white/80 border-gray-200/50 shadow-sm;
+  @apply bg-white/90 border-gray-200/70 shadow-md;
 }
 
 .light .text-muted-foreground {
@@ -174,7 +224,7 @@
 }
 
 .light .neo-blur {
-  @apply bg-white/80 border-gray-200;
+  @apply bg-white/95 border-gray-200 shadow-sm;
 }
 
 /* Button style improvements for light mode */
@@ -183,12 +233,28 @@
 }
 
 .light button.glass-morph {
-  @apply bg-white/80 hover:bg-white/90 text-gray-800 border-gray-300;
+  @apply bg-white/95 hover:bg-white border-gray-300/80 text-gray-800 shadow-sm;
 }
 
-/* Dark mode improved contrasts */
+.light button.bg-stem-blue, 
+.light button.bg-stem-blue\/70, 
+.light button.bg-stem-blue\/90 {
+  @apply bg-blue-600 hover:bg-blue-700 text-white border-blue-700/20;
+}
+
+/* Card improvements for light mode */
+.light .card {
+  @apply shadow-md bg-white/90 border-gray-200/70;
+}
+
+/* Improved dark mode contrasts */
 .dark button.glass-morph {
   @apply hover:bg-white/15 text-white;
+}
+
+/* Improved animation for auth pages */
+.absolute.inset-0.flex.items-center.justify-center .card {
+  @apply shadow-xl animate-float;
 }
 
 /* Custom Animation */
@@ -213,13 +279,121 @@
 }
 
 .light .bg-stem-blue {
-  background-color: hsl(210, 100%, 40%);
+  background-color: hsl(210, 80%, 50%);
 }
 
 .light .hover\:bg-stem-blue:hover {
-  background-color: hsl(210, 100%, 35%);
+  background-color: hsl(210, 80%, 45%);
 }
 
 .light .border-stem-blue {
-  border-color: hsl(210, 100%, 40%);
+  border-color: hsl(210, 80%, 50%);
+}
+
+/* Text improvements for light mode */
+.light .text-white\/70 {
+  @apply text-gray-700;
+}
+
+.light .text-white\/90 {
+  @apply text-gray-900;
+}
+
+.light .bg-black\/20 {
+  @apply bg-white/90;
+}
+
+.light input.glass-morph, .light input.bg-white\/5 {
+  @apply bg-white text-gray-900 border-gray-300;
+}
+
+/* Light mode specific styles */
+.light {
+  background-color: #f8fafc;
+  background-image: 
+    linear-gradient(to right, rgba(235, 240, 255, 0.2) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(235, 240, 255, 0.2) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Enhanced glass morphism for light mode */
+.light .glass-morph {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(230, 236, 250, 0.8);
+  box-shadow: 
+    0 8px 32px rgba(100, 120, 220, 0.1),
+    0 2px 8px rgba(100, 120, 220, 0.05);
+  backdrop-filter: blur(12px);
+}
+
+/* Button enhancements for light mode */
+.light .button-primary {
+  background: linear-gradient(to right, #3b82f6, #6366f1);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  transition: all 0.3s ease;
+}
+
+.light .button-primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Text gradient for headings in light mode */
+.light .text-gradient {
+  background: linear-gradient(to right, #1d4ed8, #7c3aed);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Animation for content fade-in */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Particle animation */
+.particles-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  animation: float-around linear infinite;
+}
+
+@keyframes float-around {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(10px, 20px) rotate(90deg);
+  }
+  50% {
+    transform: translate(20px, -10px) rotate(180deg);
+  }
+  75% {
+    transform: translate(-10px, -20px) rotate(270deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(360deg);
+  }
 }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -17,13 +16,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Github, Mail, ArrowRight } from "lucide-react";
-import { useSupabaseAuth } from "@/lib/auth";
+import { Github, Mail, ArrowRight, Download, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { saveUserInfo } from "@/lib/database";
+import Spline from '@splinetool/react-spline';
+import { signUp } from "@/lib/auth";
 
 // Define the form schema with Zod
 const signupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      "Password must include uppercase, lowercase, number and special character"
+    ),
   confirmPassword: z.string(),
   terms: z.boolean().refine((val) => val === true, {
     message: "You must agree to the terms and privacy policy",
@@ -37,19 +46,36 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { signUp, signInWithGoogle, signInWithGithub, user } = useSupabaseAuth();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [termsChecked, setTermsChecked] = useState(false);
+  const [splineLoaded, setSplineLoaded] = useState(false);
+  const [splineError, setSplineError] = useState(false);
+
+  // Handle Spline load events
+  const handleSplineLoad = () => {
+    console.log('Spline scene loaded successfully');
+    setSplineLoaded(true);
+  };
+
+  const handleSplineError = (err: any) => {
+    console.error('Error loading Spline scene:', err);
+    setSplineError(true);
+  };
 
   // Set up the form with react-hook-form and zod validation
   const {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
+    watch,
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -57,66 +83,171 @@ const Signup = () => {
     },
   });
 
-  // If user is already logged in, redirect to home page
-  if (user) {
-    navigate("/");
-    return null;
-  }
+  // Watch terms value for real-time validation
+  const watchTerms = watch("terms");
 
   // Handle form submission
   const onSubmit = async (data: SignupFormValues) => {
     setIsSubmitting(true);
-    setAuthError(null);
+    setError(null);
 
     try {
-      const { error } = await signUp(data.email, data.password);
+      const { success, user, error } = await signUp(data.email, data.password);
       
-      if (error) {
-        setAuthError(error.message);
-        return;
+      if (!success) {
+        throw new Error(error?.message || "Failed to create account");
       }
       
       // Show success message
       setSuccess(true);
+      
+      toast({
+        title: "Account created successfully!",
+        description: "You can now log in with your credentials.",
+      });
+      
+      // Redirect to login page after short delay
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
     } catch (error) {
       console.error("Signup error:", error);
-      setAuthError("An unexpected error occurred. Please try again.");
+      
+      let errorMessage = (error as Error).message || "An unexpected error occurred. Please try again.";
+      
+      // Provide a more user-friendly message for connection errors
+      if (errorMessage.includes("Failed to fetch") || errorMessage.includes("NetworkError")) {
+        errorMessage = "Unable to connect to the server. Account created in offline mode.";
+        
+        // Save user to local storage for offline use
+        try {
+          const mockUser = {
+            id: `local-${Date.now()}`,
+            email: data.email,
+            created_at: new Date().toISOString()
+          };
+          
+          const existingUsers = JSON.parse(localStorage.getItem("localUsers") || "[]");
+          existingUsers.push({
+            email: data.email,
+            password: data.password,
+            id: mockUser.id,
+            created_at: mockUser.created_at
+          });
+          localStorage.setItem("localUsers", JSON.stringify(existingUsers));
+          
+          // Show success message
+          setSuccess(true);
+          
+          toast({
+            title: "Account created in offline mode",
+            description: "You can log in locally, but data won't sync until you're back online.",
+          });
+          
+          // Redirect to login page after short delay
+          setTimeout(() => {
+            navigate("/login");
+          }, 2000);
+          
+          return;
+        } catch (e) {
+          console.error("Error creating local user:", e);
+          errorMessage = "Failed to create account in offline mode.";
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handle OAuth sign in
-  const handleOAuthSignIn = async (provider: 'google' | 'github') => {
-    setAuthError(null);
+  // Handle OAuth sign in (simulated)
+  const handleOAuthSignIn = async (provider: string) => {
+    setIsSubmitting(true);
+    setError(null);
     
     try {
-      if (provider === 'google') {
-        await signInWithGoogle();
-      } else if (provider === 'github') {
-        await signInWithGithub();
+      // Simulate OAuth registration with mock user data
+      const mockUser = {
+        email: `${provider.toLowerCase()}-user-${Date.now()}@example.com`,
+        name: `${provider} User`,
+        preferences: {
+          authProvider: provider,
+          agreedToTerms: true,
+          signupDate: new Date().toISOString()
+        }
+      };
+      
+      // Save mock user to database
+      const { success: saveSuccess, error: saveError } = await saveUserInfo(mockUser);
+      
+      if (!saveSuccess) {
+        throw new Error(saveError?.message || `Failed to register with ${provider}`);
       }
+      
+      // Store user info in local storage (simulating login after registration)
+      localStorage.setItem("user", JSON.stringify(mockUser));
+      
+      toast({
+        title: `Registered with ${provider}`,
+        description: "Your account has been created successfully!",
+      });
+      
+      // Redirect to home page
+      navigate("/");
     } catch (error) {
-      console.error(`${provider} sign in error:`, error);
-      setAuthError(`An error occurred with ${provider} sign in. Please try again.`);
+      console.error(`${provider} registration error:`, error);
+      setError(`An error occurred with ${provider} registration. Please try again.`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  // Handle checkbox change
+  const handleTermsChange = (checked: boolean) => {
+    setTermsChecked(checked);
+    setValue("terms", checked, { shouldValidate: true });
+  };
+
   return (
-    <div className="flex items-center justify-center min-h-[80vh] px-4 py-12">
-      <div className="w-full max-w-md animate-fade-in">
-        <Card className="glass-morph">
+    <div className="relative w-full min-h-screen flex items-center justify-center overflow-hidden bg-[#0a0a0a]">
+      {/* Fallback gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-stem-purple/30 via-stem-blue/20 to-[#0a0a0a]"></div>
+      
+      {/* Full screen 3D background */}
+      <div className="absolute inset-0">
+        <Spline 
+          scene="https://prod.spline.design/fNRZodNupZx7Tzq3/scene.splinecode"
+          onLoad={handleSplineLoad}
+          onError={handleSplineError} 
+        />
+        
+        {/* Loading indicator */}
+        {!splineLoaded && !splineError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <div className="flex flex-col items-center">
+              <Loader2 className="h-10 w-10 animate-spin text-white mb-2" />
+              <p className="text-sm text-white/90">Loading 3D scene...</p>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Floating signup card with improved glassmorphism */}
+      <div className="relative my-8 w-full max-w-md p-4">
+        <Card className="backdrop-blur-xl bg-black/50 border border-white/20 shadow-2xl rounded-xl overflow-hidden">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center text-gradient">Create an Account</CardTitle>
-            <CardDescription className="text-center">
-              Sign up to download the STEM Assistant app
+            <CardTitle className="text-2xl font-bold text-center text-white">Create an Account</CardTitle>
+            <CardDescription className="text-center text-white/80">
+              Enter your information to create an account
             </CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-4">
-            {authError && (
+            {error && (
               <Alert variant="destructive">
-                <AlertDescription>{authError}</AlertDescription>
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             
@@ -124,107 +255,134 @@ const Signup = () => {
               <Alert>
                 <AlertDescription className="text-center py-4">
                   <p className="mb-4">Your account has been created successfully!</p>
-                  <p>Please check your email to verify your account.</p>
-                  <Button 
-                    className="mt-4 glass-morph"
-                    onClick={() => navigate("/login")}
-                  >
-                    Go to Sign In
-                  </Button>
+                  <p>You can now log in with your credentials.</p>
+                  <div className="flex gap-3 mt-4 justify-center">
+                    <Button 
+                      className="bg-stem-purple hover:bg-stem-purple/90 border border-white/20 shadow-lg backdrop-blur-xl text-white"
+                      onClick={() => navigate("/login")}
+                    >
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                      Sign In
+                    </Button>
+                    <Button 
+                      className="backdrop-blur-xl border-white/30 bg-black/30 hover:bg-white/10 hover:border-white/50 text-white shadow-lg"
+                      variant="outline"
+                      onClick={() => navigate("/download")}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download App
+                    </Button>
+                  </div>
                 </AlertDescription>
               </Alert>
             ) : (
               <>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="name" className="text-white">Full Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="John Doe"
+                      className="backdrop-blur-xl border-white/30 bg-black/30 focus:border-white/50 shadow-inner text-white"
+                      aria-invalid={!!errors.name}
+                      {...register("name")}
+                    />
+                    {errors.name && (
+                      <p className="text-sm text-red-400">{errors.name.message}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-white">Email</Label>
                     <Input
                       id="email"
                       type="email"
                       placeholder="name@example.com"
-                      className="glass-morph"
+                      className="backdrop-blur-xl border-white/30 bg-black/30 focus:border-white/50 shadow-inner text-white"
                       aria-invalid={!!errors.email}
                       {...register("email")}
                     />
                     {errors.email && (
-                      <p className="text-sm text-destructive">{errors.email.message}</p>
+                      <p className="text-sm text-red-400">{errors.email.message}</p>
                     )}
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password" className="text-white">Password</Label>
                     <Input
                       id="password"
                       type="password"
-                      className="glass-morph"
+                      className="backdrop-blur-xl border-white/30 bg-black/30 focus:border-white/50 shadow-inner text-white"
                       aria-invalid={!!errors.password}
                       {...register("password")}
                     />
                     {errors.password && (
-                      <p className="text-sm text-destructive">{errors.password.message}</p>
+                      <p className="text-sm text-red-400">{errors.password.message}</p>
                     )}
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
                     <Input
                       id="confirmPassword"
                       type="password"
-                      className="glass-morph"
+                      className="backdrop-blur-xl border-white/30 bg-black/30 focus:border-white/50 shadow-inner text-white"
                       aria-invalid={!!errors.confirmPassword}
                       {...register("confirmPassword")}
                     />
                     {errors.confirmPassword && (
-                      <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+                      <p className="text-sm text-red-400">{errors.confirmPassword.message}</p>
                     )}
                   </div>
                   
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id="terms" 
-                      {...register("terms")} 
+                      checked={termsChecked}
+                      onCheckedChange={handleTermsChange}
                       aria-invalid={!!errors.terms}
+                      className="border-white/30 data-[state=checked]:bg-stem-purple"
                     />
                     <Label
                       htmlFor="terms"
-                      className="text-sm font-normal"
+                      className="text-sm font-normal text-white/90"
                     >
                       I agree to the{" "}
                       <Link
                         to="/terms"
-                        className="text-stem-blue hover:underline"
+                        className="text-stem-purple hover:underline"
                       >
                         terms of service
                       </Link>{" "}
                       and{" "}
                       <Link
                         to="/privacy"
-                        className="text-stem-blue hover:underline"
+                        className="text-stem-purple hover:underline"
                       >
                         privacy policy
                       </Link>
                     </Label>
                   </div>
                   {errors.terms && (
-                    <p className="text-sm text-destructive">{errors.terms.message}</p>
+                    <p className="text-sm text-red-400">{errors.terms.message}</p>
                   )}
                   
                   <Button
                     type="submit"
-                    className="w-full glass-morph"
+                    className="w-full bg-stem-purple hover:bg-stem-purple/90 border border-white/20 shadow-lg backdrop-blur-xl text-white"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Signing up..." : "Sign Up"}
+                    {isSubmitting ? "Creating account..." : "Create Account"}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </form>
                 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-white/10"></div>
+                    <div className="w-full border-t border-white/20"></div>
                   </div>
                   <div className="relative flex justify-center text-xs">
-                    <span className="bg-background px-2 text-muted-foreground">
+                    <span className="bg-black/50 px-2 text-white/80 backdrop-blur-xl">
                       Or continue with
                     </span>
                   </div>
@@ -233,32 +391,41 @@ const Signup = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <Button
                     variant="outline"
-                    className="glass-morph"
-                    onClick={() => handleOAuthSignIn('github')}
+                    className="backdrop-blur-xl border-white/30 bg-black/30 hover:bg-white/10 hover:border-white/50 text-white shadow-lg"
+                    onClick={() => handleOAuthSignIn('GitHub')}
+                    disabled={isSubmitting}
                   >
                     <Github className="mr-2 h-4 w-4" />
                     GitHub
                   </Button>
                   <Button
                     variant="outline"
-                    className="glass-morph"
-                    onClick={() => handleOAuthSignIn('google')}
+                    className="backdrop-blur-xl border-white/30 bg-black/30 hover:bg-white/10 hover:border-white/50 text-white shadow-lg"
+                    onClick={() => handleOAuthSignIn('Google')}
+                    disabled={isSubmitting}
                   >
                     <Mail className="mr-2 h-4 w-4" />
                     Google
                   </Button>
                 </div>
+                
+                <div className="flex justify-center mt-6">
+                  <Link to="/download" className="bg-stem-purple/70 hover:bg-stem-purple/90 border border-white/20 shadow-md text-white px-4 py-2 rounded-md text-sm flex items-center backdrop-blur-md transition-all duration-200">
+                    <Download className="mr-2 h-4 w-4" />
+                    Skip to Download
+                  </Link>
+                </div>
               </>
             )}
           </CardContent>
           
-          <CardFooter className="flex flex-wrap items-center justify-center gap-1">
-            <div className="text-sm text-muted-foreground">
+          <CardFooter className="flex justify-center">
+            <p className="text-white/80">
               Already have an account?{" "}
-              <Link to="/login" className="text-stem-blue hover:underline">
+              <Link to="/login" className="text-stem-purple hover:text-stem-purple/80 hover:underline">
                 Sign in
               </Link>
-            </div>
+            </p>
           </CardFooter>
         </Card>
       </div>

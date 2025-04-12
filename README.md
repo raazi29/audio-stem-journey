@@ -1,73 +1,158 @@
-# Welcome to your Lovable project
+# STEM Assistant Application
 
-## Project info
+This project is an accessible learning platform designed for visually impaired students to enhance STEM education through audio processing and separation.
 
-**URL**: https://lovable.dev/projects/b986e5da-56b8-46cf-81fe-3204f11139b1
+## Supabase Integration Guide
 
-## How can I edit this code?
+This application uses [Supabase](https://supabase.io/) for authentication, database, and storage functionality. Here's how to set up and use Supabase integration.
 
-There are several ways of editing your application.
+### Setting Up Supabase
 
-**Use Lovable**
+1. **Create a Supabase Project**:
+   - Sign up at [supabase.com](https://supabase.com)
+   - Create a new project
+   - Copy your project URL and anon key
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/b986e5da-56b8-46cf-81fe-3204f11139b1) and start prompting.
+2. **Configure Environment Variables**:
+   Create a `.env` file in the project root with:
+   ```
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
 
-Changes made via Lovable will be committed automatically to this repo.
+3. **Run Database Migrations**:
+   - Install Supabase CLI
+   - Run `supabase init` in your project
+   - Create migrations in the `supabase/migrations` folder
+   - Apply migrations with `supabase db push`
 
-**Use your preferred IDE**
+### Database Schema
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+The application uses the following tables:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+#### profiles
+Stores user profile information:
+```sql
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id),
+  email TEXT,
+  name TEXT,
+  avatar_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE,
+  preferences JSONB DEFAULT '{}'::JSONB
+);
 ```
 
-**Edit a file directly in GitHub**
+#### user_activities
+Tracks user actions within the app:
+```sql
+CREATE TABLE user_activities (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  activity_type TEXT NOT NULL,
+  activity_details JSONB DEFAULT '{}'::JSONB,
+  metadata JSONB DEFAULT '{}'::JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  ip_address TEXT
+);
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+#### downloads
+Tracks app downloads:
+```sql
+CREATE TABLE downloads (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  app_version_id UUID REFERENCES app_versions(id),
+  user_id UUID REFERENCES auth.users(id),
+  email TEXT,
+  download_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  user_agent TEXT
+);
+```
 
-**Use GitHub Codespaces**
+### Authentication Flow
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+The application implements a dual authentication system:
 
-## What technologies are used for this project?
+1. **Online Mode**: Uses Supabase Auth for secure authentication
+2. **Offline Mode**: Falls back to localStorage when offline
 
-This project is built with:
+Key features:
+- User signup and login with email/password
+- Session persistence
+- Automatic sync when going from offline to online mode
+- Activity tracking for analytics
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Working with User Data
 
-## How can I deploy this project?
+#### User Profile Management
 
-Simply open [Lovable](https://lovable.dev/projects/b986e5da-56b8-46cf-81fe-3204f11139b1) and click on Share -> Publish.
+User profiles are managed through the `user-service.ts` module:
 
-## Can I connect a custom domain to my Lovable project?
+```typescript
+// Create or update a user profile
+const { success } = await upsertUserProfile({
+  id: user.id,
+  email: user.email,
+  name: "John Doe"
+});
 
-Yes it is!
+// Get a user's profile
+const { profile } = await getUserProfile(userId);
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+#### Activity Tracking
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Track user actions for analytics:
+
+```typescript
+// Track a user activity
+await trackUserActivity(
+  userId,
+  'download',
+  { app_version_id: '123' },
+  { device: 'mobile' }
+);
+
+// Get user's recent activities
+const { activities } = await getUserActivities(userId, 10);
+```
+
+#### Download Tracking
+
+Track app downloads:
+
+```typescript
+// Track a download
+await trackDownload(appVersionId, userEmail);
+
+// Get download statistics
+const stats = await getDownloadStats();
+console.log(`Total downloads: ${stats.total}`);
+```
+
+### Offline Support
+
+The application provides offline support with:
+
+- Local authentication
+- Data caching in localStorage
+- Automatic synchronization when connection is restored
+- Graceful degradation of features
+
+## GitHub Repository Integration
+
+This project is available on GitHub at:
+https://github.com/AshwinKumarBV-git/Hackathon2025
+
+## Development
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Configure Supabase (see above)
+4. Start development server: `npm run dev`
+
+## License
+
+This project is licensed under the MIT License.

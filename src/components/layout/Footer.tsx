@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Github, Twitter, Mail } from "lucide-react";
 
@@ -16,7 +15,7 @@ export default function Footer() {
               <a 
                 href="https://github.com" 
                 target="_blank" 
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Visit our GitHub"
               >
@@ -25,7 +24,7 @@ export default function Footer() {
               <a 
                 href="https://twitter.com" 
                 target="_blank" 
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Visit our Twitter"
               >
