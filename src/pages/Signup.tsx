@@ -95,72 +95,199 @@ const Signup = () => {
     try {
       // 1. Sign up the user with Supabase auth
       console.log('Creating user account for:', data.email);
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+      console.log('Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+      
+      // Network diagnostics
+      try {
+        const networkTest = await fetch('https://www.google.com', { 
+          method: 'HEAD',
+          // Add cache-busting to prevent cached responses
+          cache: 'no-store'
+        });
+        console.log(`Network connectivity test: ${networkTest.ok ? 'PASSED' : 'FAILED'}`);
+      } catch (err) {
+        console.error('Network appears to be offline:', err);
+      }
+      
+      // CORS diagnostics
+      try {
+        const corsTest = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/settings`, {
+          method: 'OPTIONS',
+          headers: {
+            'Origin': window.location.origin,
+            'Access-Control-Request-Method': 'POST',
+            'Access-Control-Request-Headers': 'authorization,content-type,apikey'
+          }
+        });
+        console.log('CORS preflight test results:');
+        console.log('Status:', corsTest.status);
+        console.log('Allow-Origin:', corsTest.headers.get('access-control-allow-origin'));
+        console.log('Allow-Methods:', corsTest.headers.get('access-control-allow-methods'));
+        console.log('Allow-Headers:', corsTest.headers.get('access-control-allow-headers'));
+      } catch (err) {
+        console.error('CORS preflight test failed:', err);
+      }
+      
+      // Set a timeout for the signup request
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout - network may be unavailable')), 15000)
+      );
+      
+      console.log('Making signup request...');
+      
+      // Race the signup request against timeout
+      const signupPromise = supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
           data: {
-            full_name: data.name, // Store name in user metadata
+            full_name: data.name,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         }
       });
       
-      if (authError) {
-        throw new Error(authError.message);
-      }
-      
-      if (!authData.user) {
-        throw new Error("User creation failed with no error provided");
-      }
-      
-      console.log('User created successfully:', authData.user.id);
-      
-      // 2. Save additional profile data
+      // Use try-catch to get more detailed error info
       try {
-        console.log('Saving profile data for user:', authData.user.id);
-        const { error: profileError } = await supabase.from('profiles').upsert([
-          {
-            id: authData.user.id,
-            full_name: data.name,
-            email: authData.user.email,
-            preferences: {
-              agreedToTerms: data.terms,
-              signupDate: new Date().toISOString()
-            },
-            updated_at: new Date().toISOString()
+        const result = await Promise.race([signupPromise, timeoutPromise]) as any;
+        const { data: authData, error: authError } = result || { data: null, error: new Error('Unknown error during signup') };
+        
+        if (authError) {
+          console.error('Auth error details:', {
+            message: authError.message,
+            status: authError.status,
+            name: authError.name,
+            stack: authError.stack
+          });
+          throw authError;
+        }
+        
+        if (!authData?.user) {
+          throw new Error("User creation failed with no error provided");
+        }
+        
+        console.log('User created successfully:', authData.user.id);
+        
+        // 2. Save additional profile data
+        try {
+          console.log('Saving profile data for user:', authData.user.id);
+          const { error: profileError } = await supabase.from('profiles').upsert([
+            {
+              id: authData.user.id,
+              full_name: data.name,
+              email: authData.user.email,
+              preferences: {
+                agreedToTerms: data.terms,
+                signupDate: new Date().toISOString()
+              },
+              updated_at: new Date().toISOString()
+            }
+          ], { 
+            onConflict: 'id'
+          });
+          
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            // We'll continue even if profile creation fails
+          } else {
+            console.log('Profile saved successfully');
           }
-        ], { 
-          onConflict: 'id'
+        } catch (profileErr) {
+          console.error('Error saving profile:', profileErr);
+        }
+        
+        // 3. Show success message
+        setSuccess(true);
+        
+        toast({
+          title: "Account created successfully!",
+          description: "Please check your email to verify your account before logging in.",
         });
         
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          // We'll continue even if profile creation fails
-        } else {
-          console.log('Profile saved successfully');
+        // 4. Redirect to login page after short delay
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      } catch (innerError) {
+        console.error('Error during signup request:', innerError);
+        
+        // Network error - create local user
+        if (innerError instanceof Error && 
+            (innerError.message?.includes('Failed to fetch') || 
+             innerError.message?.includes('NetworkError') ||
+             innerError.message?.includes('timeout'))) {
+          
+          handleOfflineSignup(data);
+          return;
         }
-      } catch (profileErr) {
-        console.error('Error saving profile:', profileErr);
+        
+        throw innerError;
       }
-      
-      // 3. Show success message
-      setSuccess(true);
-      
-      toast({
-        title: "Account created successfully!",
-        description: "Please check your email to verify your account before logging in.",
-      });
-      
-      // 4. Redirect to login page after short delay
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
     } catch (error) {
       console.error("Signup error:", error);
-      setError((error as Error).message || "Failed to create account. Please try again.");
+      
+      let errorMessage = "Failed to create account. ";
+      
+      if (error instanceof Error) {
+        errorMessage += error.message;
+        
+        // Provide more user-friendly messages
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          errorMessage = "Network error. Please check your internet connection and try again.";
+        } else if (error.message.includes('already registered')) {
+          errorMessage = "This email is already registered. Try signing in instead.";
+        } else if (error.message.includes('JWT')) {
+          errorMessage = "Authentication error. Please refresh the page and try again.";
+        }
+      }
+      
+      setError(errorMessage);
       setIsSubmitting(false);
     }
+  };
+  
+  // Handle offline signup
+  const handleOfflineSignup = (data: SignupFormValues) => {
+    console.log('Creating offline user account');
+    // Create a temporary local user ID
+    const tempUserId = `local-${Date.now()}`;
+    
+    // Store user in localStorage for offline access
+    const localUser = {
+      id: tempUserId,
+      email: data.email,
+      full_name: data.name,
+      created_at: new Date().toISOString(),
+      isLocalOnly: true
+    };
+    
+    // Store in localStorage
+    localStorage.setItem('user', JSON.stringify(localUser));
+    
+    // Store in localUsers array for future login
+    try {
+      const existingUsers = JSON.parse(localStorage.getItem('localUsers') || '[]');
+      existingUsers.push({
+        ...localUser,
+        password: data.password // Only for local auth - will be removed when synced online
+      });
+      localStorage.setItem('localUsers', JSON.stringify(existingUsers));
+    } catch (err) {
+      console.error('Error saving local user:', err);
+    }
+    
+    // Show success but indicate offline mode
+    setSuccess(true);
+    toast({
+      title: "Account created in offline mode",
+      description: "You can use the app now, but some features may be limited until you're online.",
+    });
+    
+    // Redirect after delay
+    setTimeout(() => {
+      navigate("/");
+    }, 2000);
   };
 
   // Handle OAuth sign in (simulated)

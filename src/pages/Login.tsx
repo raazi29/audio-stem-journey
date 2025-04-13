@@ -81,61 +81,129 @@ const Login = () => {
     try {
       console.log('Attempting login for:', data.email);
       
-      // Call Supabase auth directly for login
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      // Set a timeout for the login request
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout - network may be unavailable')), 10000)
+      );
+      
+      // Race the login request against timeout
+      const loginPromise = supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
       
-      if (authError) {
-        throw new Error(authError.message);
-      }
-      
-      if (!authData.user) {
-        throw new Error("No user returned from authentication");
-      }
-      
-      console.log('Login successful for user:', authData.user.id);
-      
-      // Store user info in local storage
-      localStorage.setItem('user', JSON.stringify({
-        id: authData.user.id,
-        email: authData.user.email,
-        created_at: authData.user.created_at
-      }));
-      
-      // Check if user has a profile, create one if not
+      // Try online login first
       try {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authData.user.id)
-          .single();
+        const result = await Promise.race([loginPromise, timeoutPromise]) as any;
+        const { data: authData, error: authError } = result || { data: null, error: new Error('Unknown error during login') };
         
-        if (profileError || !profileData) {
-          console.log('Profile not found, creating new profile');
+        if (authError) {
+          console.error('Auth error during login:', authError);
           
-          // Create profile if it doesn't exist
-          await supabase.from('profiles').upsert([
-            {
-              id: authData.user.id,
-              email: authData.user.email,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-          ], { onConflict: 'id' });
+          // If it's not a network error, and it's a credentials error, don't try local login
+          if (!authError.message?.includes('Failed to fetch') && 
+              !authError.message?.includes('NetworkError') &&
+              !authError.message?.includes('timeout') &&
+              (authError.message?.includes('Invalid login credentials') || 
+               authError.message?.includes('Email not confirmed'))) {
+            throw authError;
+          }
+          
+          // For network errors, try local login
+          throw new Error('NetworkError');
         }
-      } catch (profileErr) {
-        console.error('Error checking/creating profile:', profileErr);
+        
+        if (!authData?.user) {
+          throw new Error("No user returned from authentication");
+        }
+        
+        console.log('Login successful for user:', authData.user.id);
+        
+        // Store user info in local storage
+        localStorage.setItem('user', JSON.stringify({
+          id: authData.user.id,
+          email: authData.user.email,
+          created_at: authData.user.created_at
+        }));
+        
+        // Check if user has a profile, create one if not
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', authData.user.id)
+            .single();
+          
+          if (profileError || !profileData) {
+            console.log('Profile not found, creating new profile');
+            
+            // Create profile if it doesn't exist
+            await supabase.from('profiles').upsert([
+              {
+                id: authData.user.id,
+                email: authData.user.email,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            ], { onConflict: 'id' });
+          }
+        } catch (profileErr) {
+          console.error('Error checking/creating profile:', profileErr);
+        }
+        
+        toast({
+          title: "Signed in successfully!",
+          description: "Welcome back to STEM Assistant.",
+        });
+        
+        // Redirect to the home page
+        navigate("/");
+        return;
+      } catch (onlineError) {
+        // For non-network errors, propagate them
+        if (!(onlineError instanceof Error) || 
+            !onlineError.message.includes('Network')) {
+          throw onlineError;
+        }
+        
+        console.log('Network error, trying local login');
+        
+        // Try local login as fallback
+        try {
+          // Get locally stored users
+          const localUsers = JSON.parse(localStorage.getItem('localUsers') || '[]');
+          const localUser = localUsers.find((u: any) => 
+            u.email === data.email && u.password === data.password
+          );
+          
+          if (localUser) {
+            console.log('Local login successful');
+            
+            // Remove password before storing in active user
+            const { password, ...userWithoutPassword } = localUser;
+            
+            // Store user info
+            localStorage.setItem('user', JSON.stringify({
+              ...userWithoutPassword,
+              isLocalOnly: true
+            }));
+            
+            toast({
+              title: "Signed in (offline mode)",
+              description: "You have limited access until you're online.",
+            });
+            
+            // Redirect to the home page
+            navigate("/");
+            return;
+          } else {
+            throw new Error('Invalid email or password for local login');
+          }
+        } catch (localError) {
+          console.error('Local login error:', localError);
+          throw new Error('Could not log in online or offline. Please check your credentials or internet connection.');
+        }
       }
-      
-      toast({
-        title: "Signed in successfully!",
-        description: "Welcome back to STEM Assistant.",
-      });
-      
-      // Redirect to the home page
-      navigate("/");
     } catch (error) {
       console.error("Login error:", error);
       
@@ -146,6 +214,8 @@ const Login = () => {
         errorMessage = "Invalid email or password. Please try again.";
       } else if (errorMessage.includes("Email not confirmed")) {
         errorMessage = "Please confirm your email before signing in.";
+      } else if (errorMessage.includes("Failed to fetch") || errorMessage.includes("NetworkError")) {
+        errorMessage = "Network error. Please check your internet connection.";
       }
       
       setError(errorMessage);

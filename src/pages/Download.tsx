@@ -33,7 +33,9 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { trackDownload, getDownloadStats } from "@/lib/database";
+import { getUserInfo } from "@/lib/database";
+import { trackDownload as trackOldDownload, getDownloadStats } from "@/lib/database";
+import { trackDownload } from "@/lib/download-service";
 import { 
   listApkFiles,
   ensureApkBucket
@@ -55,6 +57,19 @@ import {
   uploadApkFile
 } from "@/lib/apk-service";
 import { cn } from "@/lib/utils";
+
+// Helper function to detect the user's platform
+const detectPlatform = (): string => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  
+  if (userAgent.includes('android')) return 'Android';
+  if (userAgent.includes('iphone') || userAgent.includes('ipad') || userAgent.includes('ipod')) return 'iOS';
+  if (userAgent.includes('mac')) return 'macOS';
+  if (userAgent.includes('windows')) return 'Windows';
+  if (userAgent.includes('linux')) return 'Linux';
+  
+  return 'Unknown';
+};
 
 // Admin APK Upload Component
 const ApkUploader = () => {
@@ -710,7 +725,19 @@ const DownloadPage = () => {
     try {
       // Track the download in the database (if possible)
       try {
-        await trackDownload(selectedVersion.id, email || undefined);
+        // Use the new download tracking service with better error handling
+        await trackDownload({
+          platform: detectPlatform(),
+          app_version: selectedVersion.version_name,
+          metadata: {
+            version_id: selectedVersion.id,
+            version_code: selectedVersion.version_code,
+            user_email: email || undefined,
+            download_page: window.location.href
+          }
+        });
+        
+        console.log('Download tracked successfully');
       } catch (trackError) {
         console.warn("Error tracking download (continuing with download anyway):", trackError);
       }
