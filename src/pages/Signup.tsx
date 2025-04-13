@@ -93,115 +93,72 @@ const Signup = () => {
     setError(null);
 
     try {
-      const { success, user, error: signupError } = await signUp(data.email, data.password);
-      
-      if (!success) {
-        // Handle error message safely with type checking
-        const errorMessage = typeof signupError === 'object' && signupError 
-          ? (signupError as { message?: string }).message || "Failed to create account"
-          : "Failed to create account";
-        throw new Error(errorMessage);
-      }
-      
-      // Save additional user profile data
-      if (user && user.id) {
-        try {
-          // Insert additional profile information into the profiles table
-          const { error: profileError } = await supabase.from('profiles').upsert([
-            {
-              id: user.id,
-              full_name: data.name,
-              email: user.email,
-              preferences: {
-                agreedToTerms: data.terms,
-                signupDate: new Date().toISOString()
-              },
-              updated_at: new Date().toISOString()
-            }
-          ], { 
-            onConflict: 'id',
-            ignoreDuplicates: false 
-          });
-          
-          if (profileError) {
-            const errorMsg = typeof profileError === 'object' && profileError 
-              ? (profileError as { message?: string }).message || "Unknown error"
-              : String(profileError);
-            console.error("Failed to save complete profile:", errorMsg);
-            // Continue anyway as the account was created
-          }
-        } catch (profileErr) {
-          console.error("Error saving user profile:", profileErr);
-          // Continue anyway as the account was created
+      // 1. Sign up the user with Supabase auth
+      console.log('Creating user account for:', data.email);
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            full_name: data.name, // Store name in user metadata
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         }
+      });
+      
+      if (authError) {
+        throw new Error(authError.message);
       }
       
-      // Show success message
+      if (!authData.user) {
+        throw new Error("User creation failed with no error provided");
+      }
+      
+      console.log('User created successfully:', authData.user.id);
+      
+      // 2. Save additional profile data
+      try {
+        console.log('Saving profile data for user:', authData.user.id);
+        const { error: profileError } = await supabase.from('profiles').upsert([
+          {
+            id: authData.user.id,
+            full_name: data.name,
+            email: authData.user.email,
+            preferences: {
+              agreedToTerms: data.terms,
+              signupDate: new Date().toISOString()
+            },
+            updated_at: new Date().toISOString()
+          }
+        ], { 
+          onConflict: 'id'
+        });
+        
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          // We'll continue even if profile creation fails
+        } else {
+          console.log('Profile saved successfully');
+        }
+      } catch (profileErr) {
+        console.error('Error saving profile:', profileErr);
+      }
+      
+      // 3. Show success message
       setSuccess(true);
       
       toast({
         title: "Account created successfully!",
-        description: "You can now log in with your credentials.",
+        description: "Please check your email to verify your account before logging in.",
       });
       
-      // Redirect to login page after short delay
+      // 4. Redirect to login page after short delay
       setTimeout(() => {
         navigate("/login");
       }, 2000);
     } catch (error) {
       console.error("Signup error:", error);
-      
-      let errorMessage = (error as Error).message || "An unexpected error occurred. Please try again.";
-      
-      // Provide a more user-friendly message for connection errors
-      if (errorMessage.includes("Failed to fetch") || errorMessage.includes("NetworkError")) {
-        errorMessage = "Unable to connect to the server. Account created in offline mode.";
-        
-        // Save user to local storage for offline use
-        try {
-          const mockUser = {
-            id: `local-${Date.now()}`,
-            email: data.email,
-            name: data.name,
-            created_at: new Date().toISOString()
-          };
-          
-          const existingUsers = JSON.parse(localStorage.getItem("localUsers") || "[]");
-          existingUsers.push({
-            email: data.email,
-            name: data.name,
-            password: data.password,
-            id: mockUser.id,
-            created_at: mockUser.created_at,
-            preferences: {
-              agreedToTerms: data.terms,
-              signupDate: new Date().toISOString()
-            }
-          });
-          localStorage.setItem("localUsers", JSON.stringify(existingUsers));
-          
-          // Show success message
-          setSuccess(true);
-          
-          toast({
-            title: "Account created in offline mode",
-            description: "You can log in locally, but data won't sync until you're back online.",
-          });
-          
-          // Redirect to login page after short delay
-          setTimeout(() => {
-            navigate("/login");
-          }, 2000);
-          
-          return;
-        } catch (e) {
-          console.error("Error creating local user:", e);
-          errorMessage = "Failed to create account in offline mode.";
-        }
-      }
-      
-      setError(errorMessage);
-    } finally {
+      setError((error as Error).message || "Failed to create account. Please try again.");
       setIsSubmitting(false);
     }
   };

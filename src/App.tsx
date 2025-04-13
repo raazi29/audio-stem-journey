@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentUser } from "@/lib/auth";
 import { upsertUserProfile, trackUserActivity } from "@/lib/user-service";
+import { AuthProvider } from "@/lib/auth.tsx";
 
 // Layout
 import Layout from "./components/layout/Layout";
@@ -26,6 +27,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ApkManager from "./pages/ApkManager";
 import AdminDashboard from "./pages/admin/Dashboard";
+import AuthCallback from "./pages/AuthCallback";
 
 // Sync service
 import { syncLocalDownloads } from "@/lib/download-tracker";
@@ -123,23 +125,26 @@ const App = () => {
             <Toaster />
             <Sonner />
             <AnimationLoadProvider>
-              <Routes>
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<Home />} />
-                  <Route path="old" element={<Index />} />
-                  <Route path="about" element={<About />} />
-                  <Route path="support" element={<Support />} />
-                  <Route path="download" element={<Download />} />
-                  <Route path="accessibility" element={<Accessibility />} />
-                  <Route path="apk-manager" element={<ApkManager />} />
-                  <Route path="admin" element={<AdminDashboard />} />
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-                <Route element={<AuthLayout />}>
-                  <Route path="login" element={<Login />} />
-                  <Route path="signup" element={<Signup />} />
-                </Route>
-              </Routes>
+              <AuthProvider>
+                <Routes>
+                  <Route path="/" element={<Layout />}>
+                    <Route index element={<Home />} />
+                    <Route path="old" element={<Index />} />
+                    <Route path="about" element={<About />} />
+                    <Route path="support" element={<Support />} />
+                    <Route path="download" element={<Download />} />
+                    <Route path="accessibility" element={<Accessibility />} />
+                    <Route path="apk-manager" element={<ApkManager />} />
+                    <Route path="admin" element={<AdminDashboard />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Route>
+                  <Route element={<AuthLayout />}>
+                    <Route path="login" element={<Login />} />
+                    <Route path="signup" element={<Signup />} />
+                    <Route path="auth/callback" element={<AuthCallback />} />
+                  </Route>
+                </Routes>
+              </AuthProvider>
             </AnimationLoadProvider>
           </TooltipProvider>
         </ThemeProvider>

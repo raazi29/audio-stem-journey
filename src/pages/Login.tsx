@@ -20,7 +20,7 @@ import { ArrowRight, Mail, Github, Loader2, Eye, EyeOff, LogIn } from "lucide-re
 import { useToast } from "@/hooks/use-toast";
 import { getUserInfo } from "@/lib/database";
 import Spline from '@splinetool/react-spline';
-import { signIn } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 // Login form schema
 const loginSchema = z.object({
@@ -79,34 +79,76 @@ const Login = () => {
     }
 
     try {
-      // Call the signIn function with email and password
-      const { success, user, error } = await signIn(data.email, data.password);
+      console.log('Attempting login for:', data.email);
       
-      if (!success || error) {
-        // Format error message for display
-        const errorMessage = typeof error === 'object' && error 
-          ? (error as { message?: string }).message || "Authentication failed"
-          : "Authentication failed";
-        throw new Error(errorMessage);
+      // Call Supabase auth directly for login
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      
+      if (authError) {
+        throw new Error(authError.message);
       }
       
-      if (user) {
-        toast({
-          title: "Signed in successfully!",
-          description: "Welcome back to STEM Assistant.",
-        });
-        
-        // Redirect to the home page
-        navigate("/");
-      } else {
+      if (!authData.user) {
         throw new Error("No user returned from authentication");
       }
+      
+      console.log('Login successful for user:', authData.user.id);
+      
+      // Store user info in local storage
+      localStorage.setItem('user', JSON.stringify({
+        id: authData.user.id,
+        email: authData.user.email,
+        created_at: authData.user.created_at
+      }));
+      
+      // Check if user has a profile, create one if not
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single();
+        
+        if (profileError || !profileData) {
+          console.log('Profile not found, creating new profile');
+          
+          // Create profile if it doesn't exist
+          await supabase.from('profiles').upsert([
+            {
+              id: authData.user.id,
+              email: authData.user.email,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          ], { onConflict: 'id' });
+        }
+      } catch (profileErr) {
+        console.error('Error checking/creating profile:', profileErr);
+      }
+      
+      toast({
+        title: "Signed in successfully!",
+        description: "Welcome back to STEM Assistant.",
+      });
+      
+      // Redirect to the home page
+      navigate("/");
     } catch (error) {
       console.error("Login error:", error);
       
-      let errorMessage = (error as Error).message || "An unexpected error occurred. Please try again.";
+      let errorMessage = (error as Error).message || "Authentication failed. Please try again.";
+      
+      // Provide more user-friendly error messages
+      if (errorMessage.includes("Invalid login credentials")) {
+        errorMessage = "Invalid email or password. Please try again.";
+      } else if (errorMessage.includes("Email not confirmed")) {
+        errorMessage = "Please confirm your email before signing in.";
+      }
+      
       setError(errorMessage);
-    } finally {
       setIsSubmitting(false);
     }
   };

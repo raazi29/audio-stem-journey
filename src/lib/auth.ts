@@ -23,6 +23,9 @@ export const signUp = async (email: string, password: string): Promise<{
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      }
     });
     
     if (error) {
@@ -68,23 +71,32 @@ export const signUp = async (email: string, password: string): Promise<{
       
       // Create user profile in Supabase profiles table
       try {
-        // Insert directly into the profiles table
-        const { error: profileError } = await supabase.from('profiles').insert([
-          { 
-            id: userData.id, 
-            email: userData.email,
-            created_at: userData.created_at
-          }
-        ]);
+        // Check if profile exists first
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', userData.id)
+          .single();
         
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-        } else {
-          // Track signup activity
-          trackUserActivity(userData.id!, 'signup', {}, {
-            method: 'email',
-            timestamp: new Date().toISOString()
-          }).catch(err => console.error("Error tracking signup:", err));
+        if (!existingProfile) {
+          // Insert directly into the profiles table
+          const { error: profileError } = await supabase.from('profiles').insert([
+            { 
+              id: userData.id, 
+              email: userData.email,
+              created_at: userData.created_at
+            }
+          ]);
+          
+          if (profileError) {
+            console.error("Error creating profile:", profileError);
+          } else {
+            // Track signup activity
+            trackUserActivity(userData.id!, 'signup', {}, {
+              method: 'email',
+              timestamp: new Date().toISOString()
+            }).catch(err => console.error("Error tracking signup:", err));
+          }
         }
       } catch (profileErr) {
         console.error("Error inserting profile:", profileErr);
@@ -98,31 +110,27 @@ export const signUp = async (email: string, password: string): Promise<{
     }
     
     return { success: true, user: null };
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Error signing up:", error);
+    let errorMessage = "An unexpected error occurred";
     
-    // If there's any other error, try to use local authentication
-    try {
-      const mockUser: User = {
-        id: `local-${Date.now()}`,
-        email,
-        created_at: new Date().toISOString()
-      };
-      
-      const existingUsers = JSON.parse(localStorage.getItem("localUsers") || "[]");
-      existingUsers.push({
-        email,
-        password, // Again, don't do this in production
-        id: mockUser.id,
-        created_at: mockUser.created_at
-      });
-      localStorage.setItem("localUsers", JSON.stringify(existingUsers));
-      
-      return { success: true, user: mockUser };
-    } catch (err) {
-      console.error("Error with local fallback:", err);
-      return { success: false, error };
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error && 'message' in error) {
+      errorMessage = String((error as any).message);
     }
+    
+    // Provide more user-friendly error messages
+    if (errorMessage.includes("already registered")) {
+      errorMessage = "This email is already registered. Try signing in instead.";
+    } else if (errorMessage.includes("email")) {
+      errorMessage = "Please provide a valid email address.";
+    } else if (errorMessage.includes("password")) {
+      errorMessage = "Password must be at least 6 characters long.";
+    }
+    
+    return { success: false, error: { message: errorMessage } };
   }
 };
 
@@ -186,16 +194,34 @@ export const signIn = async (email: string, password: string): Promise<{
       console.log('Login success:', userData);
       
       // Ensure user profile exists
-      upsertUserProfile(userData).catch(err => {
+      try {
+        // Check if profile exists
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userData.id)
+          .single();
+        
+        if (!profile) {
+          // Create profile if it doesn't exist
+          await supabase.from('profiles').insert([
+            { 
+              id: userData.id, 
+              email: userData.email,
+              created_at: userData.created_at
+            }
+          ]);
+        }
+        
+        // Track login activity
+        if (userData.id) {
+          trackUserActivity(userData.id, 'login', {}, {
+            method: 'email',
+            timestamp: new Date().toISOString()
+          }).catch(err => console.error("Error tracking login:", err));
+        }
+      } catch (err) {
         console.error("Error ensuring profile exists:", err);
-      });
-      
-      // Track login activity
-      if (userData.id) {
-        trackUserActivity(userData.id, 'login', {}, {
-          method: 'email',
-          timestamp: new Date().toISOString()
-        }).catch(err => console.error("Error tracking login:", err));
       }
       
       // Store user in localStorage
@@ -208,6 +234,20 @@ export const signIn = async (email: string, password: string): Promise<{
     return { success: true, user: null };
   } catch (error) {
     console.error("Error signing in:", error);
+    let errorMessage = "An unexpected error occurred";
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error && 'message' in error) {
+      errorMessage = String((error as any).message);
+    }
+    
+    // Provide more user-friendly error messages
+    if (errorMessage.includes("Invalid login credentials")) {
+      errorMessage = "Invalid email or password. Please try again.";
+    } else if (errorMessage.includes("Email not confirmed")) {
+      errorMessage = "Please confirm your email before signing in.";
+    }
     
     // Try local authentication as fallback for any error
     try {
@@ -229,7 +269,7 @@ export const signIn = async (email: string, password: string): Promise<{
       console.error("Error with local auth fallback:", err);
     }
     
-    return { success: false, error };
+    return { success: false, error: { message: errorMessage } };
   }
 };
 
