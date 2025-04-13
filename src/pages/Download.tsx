@@ -58,19 +58,6 @@ import {
 } from "@/lib/apk-service";
 import { cn } from "@/lib/utils";
 
-// Helper function to detect the user's platform
-const detectPlatform = (): string => {
-  const userAgent = navigator.userAgent.toLowerCase();
-  
-  if (userAgent.includes('android')) return 'Android';
-  if (userAgent.includes('iphone') || userAgent.includes('ipad') || userAgent.includes('ipod')) return 'iOS';
-  if (userAgent.includes('mac')) return 'macOS';
-  if (userAgent.includes('windows')) return 'Windows';
-  if (userAgent.includes('linux')) return 'Linux';
-  
-  return 'Unknown';
-};
-
 // Admin APK Upload Component
 const ApkUploader = () => {
   const { toast } = useToast();
@@ -881,6 +868,19 @@ const DownloadPage = () => {
 
   // Find the latest version
   const latestVersion = appVersions.find((version) => version.is_required);
+
+  // Helper function to detect the user's platform
+  const detectPlatform = (): string => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    
+    if (userAgent.includes('android')) return 'Android';
+    if (userAgent.includes('iphone') || userAgent.includes('ipad') || userAgent.includes('ipod')) return 'iOS';
+    if (userAgent.includes('mac')) return 'macOS';
+    if (userAgent.includes('windows')) return 'Windows';
+    if (userAgent.includes('linux')) return 'Linux';
+    
+    return 'Unknown';
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
