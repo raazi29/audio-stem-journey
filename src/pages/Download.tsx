@@ -528,7 +528,7 @@ const DownloadPage = () => {
           file_path: defaultApkPath,
           file_size: '88000', // 88MB
           description: 'Initial release of STEM Assistant for visually impaired students',
-          release_date: new Date().toISOString(),
+          release_date: new Date('2025-04-12').toISOString(),
           is_latest: true,
           version: '2.0'
         });
@@ -557,7 +557,7 @@ const DownloadPage = () => {
           id: 'default',
           version_name: '2.0',
           version_code: 200,
-          release_date: new Date().toISOString(),
+          release_date: new Date('2025-04-12').toISOString(),
           is_public: true,
           is_required: false,
           apk_file_id: 'default',
@@ -1033,7 +1033,7 @@ const DownloadPage = () => {
                                 <tr key={v.id} className="border-b border-white/5 hover:bg-white/5">
                                   <td className="py-3 pr-4 font-medium">{v.version_name}</td>
                                   <td className="py-3 px-4">{v.apk_file ? (v.apk_file.file_size / (1024 * 1024)).toFixed(2) : 0} MB</td>
-                                  <td className="py-3 px-4">{new Date(v.release_date).toLocaleDateString()}</td>
+                                  <td className="py-3 px-4">12/04/2025</td>
                                   <td className="py-3 px-4">
                                     {v.is_public && v.is_required ? (
                                       <Badge className="bg-stem-blue text-white">Latest</Badge>
@@ -1064,7 +1064,7 @@ const DownloadPage = () => {
                               )}
                             </div>
                             <div className="text-sm text-muted-foreground mb-2">
-                              Released: {new Date(v.release_date).toLocaleDateString()} • Size: {v.apk_file ? (v.apk_file.file_size / (1024 * 1024)).toFixed(2) : 0} MB
+                              Released: 12/04/2025 • Size: {v.apk_file ? (v.apk_file.file_size / (1024 * 1024)).toFixed(2) : 0} MB
                               {downloadCounts[v.id] !== undefined && (
                                 <span className="ml-2 text-stem-blue">
                                   {downloadCounts[v.id]} downloads
